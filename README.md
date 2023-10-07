@@ -24,5 +24,6 @@ RealStockInsight é uma plataforma projetada para fornecer análises em tempo re
 - `/project`: Contém todos os projetos e módulos associados ao RealStockInsight.
 - `/docs`: Documentação do projeto, incluindo especificações e design.
 - `/tests`: Testes automatizados para validar a funcionalidade do sistema.
+- `/examples`: Exemplos elementares de como utilizar algumas das tecnologias envolvidas no projeto.
 - `README.md`: Este arquivo, com informações básicas sobre o projeto.
 
