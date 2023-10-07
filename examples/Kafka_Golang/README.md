@@ -1,8 +1,8 @@
 # Kafka & Golang Example
 
-Este repositório contém exemplos básicos para criar um produtor e um consumidor usando Apache Kafka e Golang. Ele também inclui um `docker-compose.yaml` para facilitar a configuração e execução de instâncias locais do Kafka e Zookeeper usando Docker.
+Este diretório contém exemplos básicos para criar um produtor e um consumidor usando Apache Kafka e Golang. Ele também inclui um `docker-compose.yaml` para facilitar a configuração e execução de instâncias locais do Kafka e Zookeeper usando Docker.
 
-## Estrutura do Repositório
+## Estrutura do diretório
 
 - **Consumer**: Contém o código-fonte para um consumidor Kafka básico escrito em Golang.
 - **Producer**: Contém o código-fonte para um produtor Kafka básico escrito em Golang.
