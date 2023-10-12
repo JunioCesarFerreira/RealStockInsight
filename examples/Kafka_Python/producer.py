@@ -14,8 +14,9 @@ conf = {
 
 producer = Producer(conf)
 
-# Enviar mensagem
-producer.produce('test-topic', key=None, value='Hello, Kafka', callback=delivery_report)
+for i in range(100):
+    # Enviar mensagem
+    producer.produce('test-topic', key=None, value=f'Test message id:{i+1}', callback=delivery_report)
 
 # Esperar que as mensagens sejam enviadas
 producer.flush(10)  # Tempo em segundos
