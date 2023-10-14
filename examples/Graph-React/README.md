@@ -2,7 +2,7 @@
 
 ## Descrição
 
-Este repositório contém uma aplicação React para visualizar grafos de rede e uma API em Go para fornecer os dados da rede. A aplicação React usa D3.js para renderizar os grafos de forma interativa, permitindo aos usuários explorar e entender complexas redes de dados. Na API é possível modificar o arquivo JSON de exemplo de grafo a ser retornado.
+Este diretório contém uma aplicação React para visualizar grafos de rede e uma API em Go para fornecer os dados da rede. A aplicação React usa D3.js para renderizar os grafos de forma interativa, permitindo aos usuários explorar e entender complexas redes de dados. Na API é possível modificar o arquivo JSON de exemplo de grafo a ser retornado.
 
 ## Estrutura do Projeto
 
