@@ -1,6 +1,6 @@
 # API de Dados com Cassandra, Python e Go
 
-Este é um projeto que consiste em um serviço Python para registrar dados em formato JSON em um banco de dados Apache Cassandra e uma API Go (Golang) para acessar esses dados. A API retorna o JSON mais recetente postado.
+Este projeto de exemplo consiste em um serviço Python para registrar dados em formato JSON em um banco de dados Apache Cassandra e uma API Go (Golang) para acessar esses dados. A API retorna o JSON mais recetente postado.
 O projeto é dividido em três diretórios:
 
 1. **cassandra-db**: Contém os arquivos necessários para configurar e executar um contêiner Docker do Apache Cassandra. O Dockerfile cria uma imagem com o Cassandra instalado e expõe a porta 9042. O script `init-cassandra.sh` copia um arquivo CQL de inicialização para o contêiner e executa o script para criar um keyspace e uma tabela no Cassandra.
