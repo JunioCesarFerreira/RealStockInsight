@@ -19,8 +19,8 @@ body {
   }
 
   .node {
-    fill: #3498db;  /* Azul */
-    stroke: #2980b9;  /* Azul Escuro */
+    fill: #3498db;
+    stroke: #2980b9;
     stroke-width: 1.5px;
     cursor: grab;
   }
@@ -30,7 +30,7 @@ body {
   }
   
   .link {
-    stroke: #FFFFFF;  /* Preto */
+    stroke: #FFFFFF;
     stroke-opacity: 0.6;
   }
   
