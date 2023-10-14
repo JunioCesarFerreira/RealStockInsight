@@ -11,8 +11,8 @@ import (
 
 var cluster *gocql.ClusterConfig
 
-type MyData struct {
-	JsonData string `json:"json_data"`
+type JsonData struct {
+	Graph string `json:"graph"`
 }
 
 func init() {
@@ -34,7 +34,7 @@ func getDataHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	response := MyData{JsonData: jsonData}
+	response := JsonData{Graph: jsonData}
 
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {

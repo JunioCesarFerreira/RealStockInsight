@@ -1,0 +1,41 @@
+body {
+    background-color: #000000;
+    color: #ecf0f1;
+    font-family: Arial, sans-serif;
+  }
+
+  .graph-container svg {
+    background-color: #202020;  /* Escolha a cor que preferir para o fundo do grafo */
+    border: 1px solid #7f8c8d;  /* Adiciona uma borda ao redor do SVG para diferenciá-lo do fundo da página */
+  }
+
+  .graph-container {
+    display: flex;
+    flex-direction: column; /* Ajuste para organizar os itens em uma coluna */
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .node {
+    fill: #3498db;
+    stroke: #2980b9;
+    stroke-width: 1.5px;
+    cursor: grab;
+  }
+  
+  .node:active {
+    cursor: grabbing;
+  }
+  
+  .link {
+    stroke: #FFFFFF;
+    stroke-opacity: 0.6;
+  }
+  
+  .node-label,
+  .link-label {
+    font-size: 10px;
+    fill: #ecf0f1; /* Cor do texto */
+  }
