@@ -5,7 +5,7 @@ from confluent_kafka import Producer
 
 # Configurações API
 ALPHA_VANTAGE_API_URL = "https://www.alphavantage.co/query"
-API_KEY = "QPE0RYUMPYSIM61F"
+API_KEY = "YOUR_API_KEY"
 # Configurações Kafka
 KAFKA_BOOTSTRAP_SERVERS = {
     'bootstrap.servers': 'localhost:29092',
@@ -26,8 +26,6 @@ def fetch_alpha_vantage_data(ticker):
     #DEBUG
     #print(json.dumps(raw_data, indent=4))
     
-    # Extrair e transformar dados brutos para obter os campos desejados.
-    # A estrutura exata pode precisar ser ajustada com base na resposta real da API.
     last_refresh = raw_data['Meta Data']['3. Last Refreshed']
     last_data = raw_data['Time Series (1min)'][last_refresh]
     
