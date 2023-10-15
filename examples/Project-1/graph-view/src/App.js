@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Graph from './components/Graph';
 import GraphControlPanel from './components/GraphControlPanel';
 import * as d3 from 'd3';
@@ -9,7 +9,7 @@ const App = () => {
   const [visualParams, setVisualParams] = useState({
     nodeSize: 5,
     linkDistance: 50,
-    chargeStrength: -30,
+    chargeStrength: -10,
     collisionRadius: 10,
     weightThreshold: 2,
     centerForce: 50,
@@ -52,12 +52,12 @@ const App = () => {
       .catch(error => console.error('Erro ao buscar dados da API:', error));
   }, []);
 
-  const handleParamChange = (paramName, paramValue) => {
-    setVisualParams({
-      ...visualParams,
+  const handleParamChange = useCallback((paramName, paramValue) => {
+    setVisualParams(prevParams => ({
+      ...prevParams,
       [paramName]: paramValue,
-    });
-  };
+    }));
+  }, []);
   
   return (
     <div className="graph-container">

@@ -16,6 +16,14 @@
     gap: 20px;  /* Espaço entre os controles */
     margin-bottom: 10px;  /* Espaço entre as linhas de controles */
 }
+
+table {
+    margin: 0 auto;  /* Centraliza a tabela */
+}
+  
+td {
+    padding: 10px;  /* Espaço interno das células */
+}
   
 label {
     display: flex;

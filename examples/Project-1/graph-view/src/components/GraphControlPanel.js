@@ -21,7 +21,7 @@ const GraphControlPanel = ({ onParamChange, visualParams, maxWeight }) => {
                 <input 
                   type="range" 
                   min="10" 
-                  max="200" 
+                  max="300" 
                   value={visualParams.linkDistance}
                   onChange={(e) => onParamChange("linkDistance", e.target.value)} 
                 />
@@ -43,7 +43,7 @@ const GraphControlPanel = ({ onParamChange, visualParams, maxWeight }) => {
                 <input 
                   type="range" 
                   min="-100" 
-                  max="0" 
+                  max="10" 
                   value={visualParams.chargeStrength}
                   onChange={(e) => onParamChange("chargeStrength", e.target.value)} 
                 />
@@ -53,7 +53,7 @@ const GraphControlPanel = ({ onParamChange, visualParams, maxWeight }) => {
                 <input 
                   type="range" 
                   min="1" 
-                  max="50" 
+                  max="100" 
                   value={visualParams.collisionRadius}
                   onChange={(e) => onParamChange("collisionRadius", e.target.value)} 
                 />
