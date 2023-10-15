@@ -7,7 +7,7 @@ const Graph = ({ nodes, links, width, height }) => {
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-
+    
     const simulation = d3.forceSimulation(nodes)
       .alphaDecay(0.01)
       .force("link", d3.forceLink(links).id(d => d.id).distance(50))
@@ -15,41 +15,64 @@ const Graph = ({ nodes, links, width, height }) => {
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(10));
 
-    // Criação dos nós e arestas usando D3.js
-    const link = svg
-      .selectAll(".link")
-      .data(links)
-      .enter()
-      .append("line")
-      .attr("class", "link");
+    svg.selectAll('*').remove();
 
-    const node = svg
-      .selectAll(".node")
-      .data(nodes)
-      .enter()
-      .append("circle")
-      .attr("class", "node")
-      .attr("r", 5);
+	// Adiciona um grupo para todos os elementos e aplica o zoom a este grupo.
+	const g = svg.append("g")
+		.attr("class", "everything");
+	
+	// Criação de elementos gráficos dentro do grupo...
+	const link = g.append("g")
+		.attr("class", "links")
+		.selectAll("line")
+		.data(links)
+		.enter()
+		.append("line")
+		.attr("class", "link");
+	
+	const node = g.append("g")
+		.attr("class", "nodes")
+		.selectAll("circle")
+		.data(nodes)
+		.enter()
+		.append("circle")
+		.attr("class", "node")
+		.attr("r", 5);
+	
+    const nodeLabels = g.append("g")
+		.attr("class", "node-labels")
+		.selectAll("text")
+		.data(nodes)
+		.enter()
+		.append("text")
+		.attr("x", d => d.x)
+		.attr("y", d => d.y)
+		.text(d => d.label)
+		.attr("dy", "-1em")
+    .attr("fill", "#ecf0f1")  // Cor do texto
+    .style("font-size", "10px");  // Tamanho do texto
+	
+    const linkLabels = g.append("g")
+		.attr("class", "link-labels")
+		.selectAll("text")
+		.data(links)
+		.enter()
+		.append("text")
+		.attr("x", d => (d.source.x + d.target.x) / 2)
+		.attr("y", d => (d.source.y + d.target.y) / 2)
+		.text(d => d.weight.toString())
+		.attr("dy", "-0.5em")
+    .attr("fill", "#ecf0f1")  // Cor do texto
+    .style("font-size", "10px");  // Tamanho do texto
+    
+    // Adiciona comportamento de zoom ao SVG.
+    const zoom = d3.zoom()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform); // Aplica o zoom ao grupo principal.
+      });
 
-    // Adicionando labels aos vértices
-    svg.selectAll(".node-label")
-        .data(nodes)
-        .join("text")
-        .attr("class", "node-label")
-        .attr("x", d => d.x)
-        .attr("y", d => d.y)
-        .text(d => d.label)
-        .attr("dy", "-1em");
-
-    // Adicionando labels às arestas
-    svg.selectAll(".link-label")
-        .data(links)
-        .join("text")
-        .attr("class", "link-label")
-        .attr("x", d => (d.source.x + d.target.x) / 2)
-        .attr("y", d => (d.source.y + d.target.y) / 2)
-        .text(d => d.weight.toString())
-        .attr("dy", "-0.5em");
+    svg.call(zoom);
     
     // Funções de arrastar
     const dragStart = (event, d) => {
@@ -89,13 +112,13 @@ const Graph = ({ nodes, links, width, height }) => {
           .attr("cx", d => d.x)
           .attr("cy", d => d.y);
           
-        // Atualize a posição dos rótulos dos nós
-        svg.selectAll(".node-label")
+        // Atualizando a posição dos rótulos dos nós
+        nodeLabels
           .attr("x", d => d.x)
           .attr("y", d => d.y);
-        
-        // Atualize a posição dos rótulos das arestas
-        svg.selectAll(".link-label")
+    
+        // Atualizando a posição dos rótulos das arestas
+        linkLabels
           .attr("x", d => (d.source.x + d.target.x) / 2)
           .attr("y", d => (d.source.y + d.target.y) / 2);
     });
