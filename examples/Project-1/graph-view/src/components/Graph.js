@@ -7,10 +7,13 @@ const Graph = ({ nodes, links, width, height, visualParams }) => {
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    
+
+    // Filtrar links baseados no Weight Threshold antes de renderizar
+    const filteredLinks = links.filter(link => link.weight >= visualParams.weightThreshold);
+
     const simulation = d3.forceSimulation(nodes)
       .alphaDecay(0.01)
-      .force("link", d3.forceLink(links).id(d => d.id).distance(visualParams.linkDistance))
+      .force("link", d3.forceLink(filteredLinks).id(d => d.id).distance(visualParams.linkDistance))
       .force("charge", d3.forceManyBody().strength(visualParams.chargeStrength))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(visualParams.collisionRadius));
@@ -25,7 +28,7 @@ const Graph = ({ nodes, links, width, height, visualParams }) => {
 	const link = g.append("g")
 		.attr("class", "links")
 		.selectAll("line")
-		.data(links)
+		.data(filteredLinks)
 		.enter()
 		.append("line")
 		.attr("class", "link");
@@ -55,7 +58,7 @@ const Graph = ({ nodes, links, width, height, visualParams }) => {
     const linkLabels = g.append("g")
 		.attr("class", "link-labels")
 		.selectAll("text")
-		.data(links)
+		.data(filteredLinks)
 		.enter()
 		.append("text")
 		.attr("x", d => (d.source.x + d.target.x) / 2)
