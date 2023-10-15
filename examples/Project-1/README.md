@@ -69,5 +69,17 @@ O projeto engloba um produtor que interage com uma API para obter valores de aç
 
 
 ### Executando o Projeto
-Instruções para subir os serviços usando Docker/Docker Compose e para iniciar a API e a aplicação React.
+Para execução do projeto é necessário estar com os contêiners do Kafka e do Cassandra em execução. Detalhes de como fazer isso são apresentados nos exemplos:
+- [Cassandra DB](https://github.com/JunioCesarFerreira/RealStockInsight/tree/main/examples/Cassandra_DB)
+- [Kafka e Complex Networks](https://github.com/JunioCesarFerreira/RealStockInsight/tree/main/examples/Kafka_Complex_Networks)
+
+Os scripts Python do Producer e Consumer podem ser executados no VS Code.
+
+Utilize o Kafka UI para verificar se houve efeito na execução do Producer e do Consumer.
+
+Utilize o comando `go run main.go` no diretório da API Go para disponibilizar o backend.
+
+Utilize o comando `nmp start` no diretório da UI graph-view para disponibilizar o frontend.
+
+Para mais detalhes de execução consulte os READMEs dos exemplos supracitados.
 
