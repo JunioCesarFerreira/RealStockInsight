@@ -1,0 +1,24 @@
+/* App.css */
+.app-container {
+    display: flex;
+    justify-content: space-between;
+}
+  
+.graph-control-panel {
+    text-align: center;
+    width: 200px;
+    padding: 20px;
+}
+
+.control-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;  /* Espaço entre os controles */
+    margin-bottom: 10px;  /* Espaço entre as linhas de controles */
+}
+  
+label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}

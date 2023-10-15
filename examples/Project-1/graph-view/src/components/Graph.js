@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import './Graph.css';
 import * as d3 from 'd3';
 
-const Graph = ({ nodes, links, width, height }) => {
+const Graph = ({ nodes, links, width, height, visualParams }) => {
   const svgRef = useRef();
 
   useEffect(() => {
@@ -10,10 +10,10 @@ const Graph = ({ nodes, links, width, height }) => {
     
     const simulation = d3.forceSimulation(nodes)
       .alphaDecay(0.01)
-      .force("link", d3.forceLink(links).id(d => d.id).distance(50))
-      .force("charge", d3.forceManyBody().strength(-10))
+      .force("link", d3.forceLink(links).id(d => d.id).distance(visualParams.linkDistance))
+      .force("charge", d3.forceManyBody().strength(visualParams.chargeStrength))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(10));
+      .force("collision", d3.forceCollide().radius(visualParams.collisionRadius));
 
     svg.selectAll('*').remove();
 
@@ -37,7 +37,7 @@ const Graph = ({ nodes, links, width, height }) => {
 		.enter()
 		.append("circle")
 		.attr("class", "node")
-		.attr("r", 5);
+		.attr("r", visualParams.nodeSize);
 	
     const nodeLabels = g.append("g")
 		.attr("class", "node-labels")
@@ -122,7 +122,7 @@ const Graph = ({ nodes, links, width, height }) => {
           .attr("x", d => (d.source.x + d.target.x) / 2)
           .attr("y", d => (d.source.y + d.target.y) / 2);
     });
-  }, [nodes, links, width, height]);
+  }, [nodes, links, width, height, visualParams]);
 
   return (
     <svg ref={svgRef} width={width} height={height}></svg>

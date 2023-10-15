@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Graph from './components/Graph';
+import GraphControlPanel from './components/GraphControlPanel';
 
 const App = () => {
   const [nodes, setNodes] = useState([]);
   const [links, setLinks] = useState([]);
+  const [visualParams, setVisualParams] = useState({
+    nodeSize: 5,
+    linkDistance: 50,
+    chargeStrength: -30,
+    collisionRadius: 10,
+    weightThreshold: 2,
+    centerForce: 50,
+  });
   const width = 800;
   const height = 600;
 
@@ -38,12 +47,20 @@ const App = () => {
       })
       .catch(error => console.error('Erro ao buscar dados da API:', error));
   }, []);
+
+  const handleParamChange = (paramName, paramValue) => {
+    setVisualParams({
+      ...visualParams,
+      [paramName]: paramValue,
+    });
+  };
   
   return (
     <div className="graph-container">
       <h1>Network Graph</h1>
       <div>
-      <Graph nodes={nodes} links={links} width={width} height={height} />
+      <Graph nodes={nodes} links={links} width={width} height={height} visualParams={visualParams} />
+      <GraphControlPanel onParamChange={handleParamChange} visualParams={visualParams} />
       </div>
     </div>
   );
