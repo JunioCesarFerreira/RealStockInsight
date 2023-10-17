@@ -31,7 +31,7 @@ No diretório `project`, você encontrará uma descrição detalhada do fluxo de
 
 ## Como Usar
 
-Os procedimentos de uso estão meticulosamente descritos nos READMEs dos exemplos, bem como no README do diretório `project`.
+Os procedimentos de uso estão meticulosamente descritos nos arquivos `README` dos exemplos, bem como no `README` do diretório `project`.
 
 ## Interface com usuário
 
