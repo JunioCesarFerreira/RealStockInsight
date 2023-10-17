@@ -1,12 +1,12 @@
 # Exemplos de Uso
 
-Este subdiretório foi criado para fornecer exemplos práticos de como utilizar as tecnologias empregadas no projeto principal. Aqui, você encontrará uma variedade de exemplos, cada um em seu respectivo diretório, demonstrando diferentes aspectos e funcionalidades da nossa aplicação.
+Este subdiretório foi criado para fornecer exemplos práticos de como utilizar as tecnologias empregadas no projeto principal. Aqui, você encontrará uma variedade de exemplos, cada um em seu respectivo diretório, demonstrando diferentes aspectos e funcionalidades das tecnologias utilizadas.
 
 ## Estrutura do diretório
 
-Cada diretório dentro de "examples" representa um exemplo específico e deve conter:
+Cada diretório dentro de `examples` representa um exemplo específico e deve conter:
 
-- Um breve README descrevendo o propósito do exemplo e como executá-lo.
+- Um breve "README" descrevendo o propósito do exemplo e como executá-lo.
 - Códigos-fonte.
 - Imagens ou outros recursos necessários para o exemplo.
 
