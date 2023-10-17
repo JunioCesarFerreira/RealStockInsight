@@ -16,9 +16,8 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 
 ## Fluxo de dados
 
-<p align="center">  
-  <img src="https://github.com/JunioCesarFerreira/RealStockInsight/tree/main/doc/images/RealStockInsight.png">
-</p>
+![Fluxo de dados](https://github.com/JunioCesarFerreira/RealStockInsight/blob/main/doc/images/RealStockInsight.png)
+
   
 ## Estrutura do Repositório
 
@@ -30,8 +29,5 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 
 ## Interface com usuário
 
-<p align="center">  
-  <img src="https://github.com/JunioCesarFerreira/RealStockInsight/tree/main/doc/images/print-graph-view.png">
-</p>
-  
+![Interface com usuário](https://github.com/JunioCesarFerreira/RealStockInsight/blob/main/doc/images/print-graph-view.png)
   
