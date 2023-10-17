@@ -15,7 +15,7 @@ const App = () => {
     centerForce: 50,
   });
   const width = 800;
-  const height = 600;
+  const height = 500;
 
   useEffect(() => {
     const apiUrl = 'http://localhost:5002/graph'; 

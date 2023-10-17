@@ -8,7 +8,7 @@ from confluent_kafka import Consumer, KafkaException
 # Configuração do consumidor Kafka
 conf = {
     'bootstrap.servers': 'localhost:29092',
-    'group.id': 'build-graph-3-consumer',
+    'group.id': 'build-graph-consumer',
     'auto.offset.reset': 'earliest',
 }
 consumer = Consumer(conf)

@@ -5,7 +5,7 @@ from confluent_kafka import Producer
 
 # Configurações API
 ALPHA_VANTAGE_API_URL = "https://www.alphavantage.co/query"
-API_KEY = "YOUR_API_KEY"
+API_KEY = "QPE0RYUMPYSIM61F"
 # Configurações Kafka
 KAFKA_BOOTSTRAP_SERVERS = {
     'bootstrap.servers': 'localhost:29092',
