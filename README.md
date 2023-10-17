@@ -13,6 +13,10 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 - **Golang:** Para implementação API.
 - **React:** Para implementaçaõ UI.
 - **APIs de Mercado de Ações:** Para coleta de dados em tempo real do mercado.
+
+## Fluxo de dados
+
+![Fluxo de dados](https://github.com/JunioCesarFerreira/RealStockInsight/tree/main/doc/images/RealStockInsight.png)
   
 ## Estrutura do Repositório
 
@@ -22,3 +26,7 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 - `/examples`: Exemplos elementares de como utilizar algumas das tecnologias envolvidas no projeto.
 - `README.md`: Este arquivo, com informações básicas sobre o projeto.
 
+## Interface com usuário
+
+![Interface com usuário](https://github.com/JunioCesarFerreira/RealStockInsight/tree/main/doc/images/print-graph-view.png)
+  
