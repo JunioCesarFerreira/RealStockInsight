@@ -1,4 +1,4 @@
-# RealStockInsight: Análise de Mercado de Ações em Tempo Real
+# RealStockInsight: Projeto de Rede de Co-Movimentos Financeiros
 
 ## Descrição
 
