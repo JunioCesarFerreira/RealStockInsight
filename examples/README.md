@@ -18,4 +18,3 @@ Cada diretório dentro de "examples" representa um exemplo específico e deve co
 - `Kafka_Complex_Networks`: Exemplo de uso de construção de uma rede de co-movimentos utilizando tópicos no Kafka.
 - `Kafka_Golang`: Exemplo de uso de biblioteca de produção e consumo Kafka em Golang.
 - `Kafka_Python`:  Exemplo de uso de biblioteca de produção e consumo Kafka em Python.
-- `Project-1`: Exemplo de projeto integrado com Apache Kafka, Cassandra e visualização de rede de co-movimentos em UI com D3 no React.
