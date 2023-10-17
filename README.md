@@ -16,6 +16,8 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 
 ## Fluxo de dados
 
+No diretório `project`, você encontrará uma descrição detalhada do fluxo de dados. O diagrama a seguir oferece uma visão geral:
+
 ![Fluxo de dados](https://github.com/JunioCesarFerreira/RealStockInsight/blob/main/doc/images/RealStockInsight.png)
 
   
@@ -27,7 +29,13 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 - `/examples`: Exemplos elementares de como utilizar algumas das tecnologias envolvidas no projeto.
 - `README.md`: Este arquivo, com informações básicas sobre o projeto.
 
+## Como Usar
+
+Os procedimentos de uso estão meticulosamente descritos nos READMEs dos exemplos, bem como no README do diretório `project`.
+
 ## Interface com usuário
+
+Confira na imagem a seguir a interface do usuário desenvolvida com a biblioteca D3.
 
 ![Interface com usuário](https://github.com/JunioCesarFerreira/RealStockInsight/blob/main/doc/images/print-graph-view.png)
   
