@@ -4,17 +4,17 @@ import json
 
 API_ENDPOINT = "http://localhost:5002/graph"
 
-# Lê o arquivo de configuração
+# Lê o arquivo de configuração que contém informações sobre os robôs
 with open('config.json', 'r') as file:
     config = json.load(file)
 
 def request_graph():
-    """Realiza request na api e monta networkx.Graph
+    """Realiza request na API e monta um objeto networkx.Graph.
 
     Returns:
-        networkx.Graph: Rede de co-movimentos do mercado
+        networkx.Graph: Rede de co-movimentos do mercado.
     """
-    # Realiza o request à API
+    # Realiza o request à API para obter dados do gráfico
     response = requests.get(API_ENDPOINT)
     data = response.json()
 
@@ -25,31 +25,32 @@ def request_graph():
 
     G = nx.Graph()
 
-    # Adicione os vértices ao gráfico
+    # Adiciona os vértices (ou nós) ao gráfico
     for vertex in data["graph"]["vertices"]:
         G.add_node(vertex["id"], label=vertex["label"])
 
-    # Adicione as arestas ao gráfico
+    # Adiciona as arestas ao gráfico
     for edge in data["graph"]["edges"]:
         G.add_edge(edge["source"], edge["target"], weight=edge["weight"])
         
     return G
 
-def calc_local_metrics(G):
-    # Calcula as métricas locais da rede
-    degree_centrality = nx.degree_centrality(G)
-    pagerank_centrality = nx.pagerank(G)
-    eigenvector_centrality = nx.eigenvector_centrality(G)
-    return degree_centrality, pagerank_centrality, eigenvector_centrality
-
 def run_robot(robot_name, parameters, G):
+    """Executa o robô para simular a tomada de decisão dos investidores.
+
+    Args:
+        robot_name (str): Nome do robô.
+        parameters (dict): Parâmetros para métricas específicas.
+        G (networkx.Graph): Grafo representando a rede de co-movimentos.
+
+    """
     metrics = {}
+
+    # Calcula as métricas de acordo com os parâmetros fornecidos
     if parameters["degreeCentrality"]["enable"]:
         metrics["degreeCentrality"] = nx.degree_centrality(G)
-
     if parameters["pagerank"]["enable"]:
         metrics["pagerank"] = nx.pagerank(G)
-
     if parameters["eigenvectorCentrality"]["enable"]:
         metrics["eigenvectorCentrality"] = nx.eigenvector_centrality(G)
         
@@ -61,58 +62,28 @@ def run_robot(robot_name, parameters, G):
         for metric_name, metric_values in metrics.items():
             acc_metric_value += parameters[metric_name]["threshold"]
             acc_threshold += metric_values[asset]
-            counter+=1
+            counter += 1
         metric_value = acc_metric_value / counter
         threshold = acc_threshold / counter
-        action = "buy" if metric_value > threshold else "sell"
+        action = investment_strategy(metric_value, threshold)
         print(f"Ativo: {asset}, Métrica: {metric_name}, Valor: {metric_value:.3f}, Ação: {action}")
 
-
-
-
-# Define a estratégia de investimento
 def investment_strategy(p, t):
-  if p > t:
-    return "buy"
-  else:
-    return "sell"
+    """Define a estratégia de investimento com base na métrica e no limite.
 
-# Simula os investimentos
-for asset in G.nodes():
-  dc = degree_centrality[asset]
-  action = investment_strategy(dc, 0.5)
-  print("Ativo:", asset, "Ação:", action)
-  
-  
-  
-import requests
-import networkx as nx
-import json
+    Args:
+        p (float): Valor da métrica.
+        t (float): Valor do limite (threshold).
 
-API_ENDPOINT = "http://localhost:5002/graph"  # Defina sua URL da API aqui
+    Returns:
+        str: Retorna "buy" se p > t, caso contrário retorna "sell".
+    """
+    if p > t:
+        return "buy"
+    else:
+        return "sell"
 
-def run_robot(robot_config):
-    # Obtenha os dados da API
-    response = requests.get(API_ENDPOINT)
-    data = response.json()
-
-    if not data or "graph" not in data:
-        print("Resposta da API inválida!")
-        return
-
-    G = nx.Graph()
-
-    for vertex in data["graph"]["vertices"]:
-        G.add_node(vertex["id"], label=vertex["label"])
-
-    for edge in data["graph"]["edges"]:
-        G.add_edge(edge["source"], edge["target"], weight=edge["weight"])
-
-    metrics = {}
-
-    if robot_config["parameters"][0]["degreeCentrality"]["enable"]:
-        metrics["degreeCentrality"] = nx.degree_centrality(G)
-
-    if robot_config["parameters"][0]["pagerank"]["enable"]:
-        metrics["pagerank"] = nx.pagerank
-
+# Executa cada robô de acordo com as configurações fornecidas
+G = request_graph()  # Solicita o grafo da API
+for robot in config["robots"]:
+    run_robot(robot["name"], robot["parameters"][0], G)  # Assumindo que cada robô tem apenas um conjunto de parâmetros
