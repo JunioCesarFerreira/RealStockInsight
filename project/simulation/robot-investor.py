@@ -60,15 +60,18 @@ def run_robot(robot_name, parameters, G):
     for asset, data in G.nodes(data=True):
         acc_metric_value = 0
         acc_threshold = 0
-        counter = 1
+        counter = 0
         for metric_name, metric_values in metrics.items():
             acc_metric_value += parameters[metric_name]["threshold"]
             acc_threshold += metric_values[asset]
             counter += 1
-        metric_value = acc_metric_value / counter
-        threshold = acc_threshold / counter
-        action = investment_strategy(metric_value, threshold)
-        print(f"Ativo: {data['label']}, Valor: {metric_value:.3f}, Ação: {action}")
+        if counter > 0:
+            metric_value = acc_metric_value / counter
+            threshold = acc_threshold / counter
+            action = investment_strategy(metric_value, threshold)
+            print(f"Ativo: {data['label']}, Valor: {metric_value:.3f}, Ação: {action}")
+        else:
+            print("nenhuma métrica foi selecionada")
 
 def investment_strategy(p, t):
     """Define a estratégia de investimento com base na métrica e no limite.
