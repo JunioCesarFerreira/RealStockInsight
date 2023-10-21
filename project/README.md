@@ -31,6 +31,10 @@ O projeto engloba um produtor que interage com uma API para obter valores de aç
 ### 4. `webapi`
 - **main.go**: Ponto de entrada para a API Go que serve os dados do Cassandra para o front-end React.
 
+### 5. `simulation`
+- **robot-investor.py**: Script Python que atua como simulador de investidores tomando decisões com base na rede de co-movimentos utilizandos métricas locais de centralidade.
+- **config.json**: Configura os robôs, quais métricas eles devem utilizar e seu threshold para tomada de decisão.
+
 ## Como Rodar o Projeto
 
 ### Pré-requisitos
@@ -65,6 +69,10 @@ O projeto engloba um produtor que interage com uma API para obter valores de aç
    - Execute `npm install` para instalar as dependências do projeto.
    - Execute `npm start` para iniciar a aplicação React. Ajuste as configurações de API no código, se necessário.
    
+5. **Configurando e Iniciando robôs de simulação de investidores**
+   - Robôs são definidos no arquivo de configuração `config.json`. Cada robô pode ser configurado para usar diferentes métricas (por exemplo, centralidade de grau, PageRank, centralidade de autovetor) para simular decisões de investimento.
+   - O simulador faz uma solicitação à API especificada para obter dados da rede.
+
    **Nota**: Certifique-se de que todos os serviços estejam rodando e configurados para se comunicar corretamente entre si. O sistema deve ser inicializado na ordem: Cassandra -> Kafka Services -> WebAPI -> Front-End React para garantir que todos os serviços estejam disponíveis quando necessários.
 
 
