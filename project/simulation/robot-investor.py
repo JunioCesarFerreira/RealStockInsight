@@ -17,20 +17,22 @@ def request_graph():
     # Realiza o request à API para obter dados do gráfico
     response = requests.get(API_ENDPOINT)
     data = response.json()
+    
+    print("response:", data)
 
     # Verifica se a resposta da API está em um formato adequado
-    if not data or "graph" not in data:
+    if not data or "nodes" not in data or "links" not in data:
         print("Resposta da API inválida!")
         exit()
 
     G = nx.Graph()
 
     # Adiciona os vértices (ou nós) ao gráfico
-    for vertex in data["graph"]["vertices"]:
+    for vertex in data["nodes"]:
         G.add_node(vertex["id"], label=vertex["label"])
 
     # Adiciona as arestas ao gráfico
-    for edge in data["graph"]["edges"]:
+    for edge in data["links"]:
         G.add_edge(edge["source"], edge["target"], weight=edge["weight"])
         
     return G
@@ -55,7 +57,7 @@ def run_robot(robot_name, parameters, G):
         metrics["eigenvectorCentrality"] = nx.eigenvector_centrality(G)
         
     print(f"\n{robot_name} Results:")
-    for asset in G.nodes():
+    for asset, data in G.nodes(data=True):
         acc_metric_value = 0
         acc_threshold = 0
         counter = 1
@@ -66,7 +68,7 @@ def run_robot(robot_name, parameters, G):
         metric_value = acc_metric_value / counter
         threshold = acc_threshold / counter
         action = investment_strategy(metric_value, threshold)
-        print(f"Ativo: {asset}, Métrica: {metric_name}, Valor: {metric_value:.3f}, Ação: {action}")
+        print(f"Ativo: {data['label']}, Valor: {metric_value:.3f}, Ação: {action}")
 
 def investment_strategy(p, t):
     """Define a estratégia de investimento com base na métrica e no limite.
