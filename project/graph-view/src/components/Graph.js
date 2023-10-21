@@ -32,7 +32,19 @@ const Graph = ({ nodes, links, width, height, visualParams }) => {
 		.enter()
 		.append("line")
 		.attr("class", "link");
-	
+    
+    // Calcula a quantidade de links para cada nó usando os links filtrados
+    let linkCount = {};
+    filteredLinks.forEach(link => {
+      linkCount[link.source.id] = (linkCount[link.source.id] || 0) + 1;
+      linkCount[link.target.id] = (linkCount[link.target.id] || 0) + 1;
+    });
+  
+    // Mapeia essa quantidade para um tamanho de nó desejado e use visualParams.nodeSize como multiplicador
+    const nodeSizeScale = d3.scaleLinear()
+      .domain([d3.min(Object.values(linkCount))-1, d3.max(Object.values(linkCount))])
+      .range([visualParams.nodeSize, 3 * visualParams.nodeSize]);
+  
 	const node = g.append("g")
 		.attr("class", "nodes")
 		.selectAll("circle")
@@ -40,7 +52,7 @@ const Graph = ({ nodes, links, width, height, visualParams }) => {
 		.enter()
 		.append("circle")
 		.attr("class", "node")
-		.attr("r", visualParams.nodeSize);
+    .attr("r", d => nodeSizeScale(linkCount[d.id] || 0));
 	
     const nodeLabels = g.append("g")
 		.attr("class", "node-labels")
