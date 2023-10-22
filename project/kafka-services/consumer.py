@@ -7,7 +7,7 @@ from cassandra.cluster import Cluster
 from confluent_kafka import Consumer, KafkaException
 
 # Carrega as configurações de um arquivo externo
-with open('kafka_config.json', 'r') as file:
+with open('consumer_config.json', 'r') as file:
     conf = json.load(file)
 
 consumer = Consumer(conf)
