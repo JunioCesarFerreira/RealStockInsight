@@ -12,13 +12,23 @@ conf = {
     'auto.offset.reset': 'earliest',
 }
 consumer = Consumer(conf)
-consumer.subscribe(['stock_prices'])
+consumer.subscribe(['stock-prices'])
 
-# DataFrame de preços
+# DataFrames
+opening_prices = pd.DataFrame()
 closing_prices = pd.DataFrame()
+volumes = pd.DataFrame()
+
+data_frames_keys = ['opening_prices', 'closing_prices', 'volumes']
+data_frames = {
+    'opening_prices': opening_prices,
+    'closing_prices': closing_prices,
+    'volumes': volumes
+}
 
 # Grafo
 G = nx.Graph()
+map_label_id = {}
 
 # Conectando ao cluster do Cassandra (local, por padrão)
 cluster = Cluster()
@@ -27,8 +37,15 @@ session = cluster.connect()
 # Selecionando o keyspace
 session.set_keyspace('graph_keyspace')
 
-# Método de inserção de dados ao banco
 def insert_data(session, data):
+    """
+    Insere os dados em formato JSON no banco de dados Cassandra.
+
+    Args:
+        session (cassandra.cluster.Session): Sessão ativa do Cassandra.
+        data (dict): Dados em formato de dicionário a serem inseridos no banco.
+
+    """
     # Gerando um TimeUUID
     timeuuid = uuid.uuid1()
 
@@ -37,6 +54,40 @@ def insert_data(session, data):
     
     # Convertendo o grafo para JSON e executando a query
     session.execute(query, (timeuuid, json.dumps(data)))
+
+def building_network(M, G, map_label_id, threshold=0.01):
+    """
+    Atualiza ou constrói a rede de co-movimento baseada em uma matriz de correlação.
+
+    Args:
+        M (pd.DataFrame): Matriz de correlações.
+        G (nx.Graph): Rede de co-movimento em construção ou atualização.
+        map_label_id (dict): Mapeamento entre os rótulos dos 'tickers' e seus IDs no grafo.
+        threshold (float, optional): Limiar de correlação para considerar conexão entre nós. Defaults to 0.01.
+
+    Returns:
+        nx.Graph: Grafo atualizado.
+    """
+    # Atualizando a rede de co-movimento
+    for ticker in M.columns:
+        for other_ticker in M.columns:
+            if ticker != other_ticker:
+                corr = M.loc[ticker, other_ticker]
+
+                if corr > threshold:  # Limiar de correlação
+                    if G.has_edge(map_label_id[ticker], map_label_id[other_ticker]):
+                        # Incrementa o peso da aresta existente
+                        G[map_label_id[ticker]][map_label_id[other_ticker]]['weight'] += 1
+                    else:
+                        # Adiciona uma nova aresta
+                        G.add_edge(map_label_id[ticker], map_label_id[other_ticker], weight=1)
+                elif G.has_edge(map_label_id[ticker], map_label_id[other_ticker]):
+                    # Diminui o peso da aresta existente
+                    G[map_label_id[ticker]][map_label_id[other_ticker]]['weight'] -= 1
+                    
+                    # Remove a aresta se o peso for <= 0
+                    if G[map_label_id[ticker]][map_label_id[other_ticker]]['weight'] <= 0:
+                        G.remove_edge(map_label_id[ticker], map_label_id[other_ticker])
 
 # Processo
 try:
@@ -56,42 +107,28 @@ try:
             #DEBUG
             print(json.dumps(msg_json, indent=4))
             
-            timestamp = msg_json['timestamp']
-            labelId = {}
             for i, stock_data in enumerate(msg_json['stocks']):
                 ticker = stock_data['ticker']
-                close_price = stock_data['price_data']['close']
-                closing_prices.at[timestamp, ticker] = close_price
                 G.add_node(i, label=ticker)
-                labelId[ticker] = i
+                map_label_id[ticker] = i
+                for _, stock in enumerate(stock_data['price_data']):
+                    opening_prices.at[stock["time"], ticker] = stock['open']
+                    closing_prices.at[stock["time"], ticker] = stock['close']
+                    volumes.at[stock["time"], ticker] = stock['volume']
             
-            print("closing_prices\n", closing_prices)
+            for key in data_frames_keys:
+                print(f"data_frames[{key}]\n", data_frames[key])
             
-            # Matriz de correlação de Pearson
-            correlation_matrix = closing_prices.corr(method ='pearson')
+                # Limpeza do dataframe removendo linhas que contém NaN
+                clean_data_frame = data_frames[key].dropna()
+                
+                # Matriz de correlação de Pearson
+                correlation_matrix = clean_data_frame.corr(method ='pearson')
             
-            print("correlation_matrix\n", correlation_matrix)
+                print("correlation_matrix\n", correlation_matrix)
             
-            # Atualizando a rede de co-movimento
-            for ticker in correlation_matrix.columns:
-                for other_ticker in correlation_matrix.columns:
-                    if ticker != other_ticker:
-                        corr = correlation_matrix.loc[ticker, other_ticker]
-                        
-                        if corr > 0.8:  # Limiar de correlação
-                            if G.has_edge(labelId[ticker], labelId[other_ticker]):
-                                # Incrementa o peso da aresta existente
-                                G[labelId[ticker]][labelId[other_ticker]]['weight'] += 1
-                            else:
-                                # Adiciona uma nova aresta
-                                G.add_edge(labelId[ticker], labelId[other_ticker], weight=1)
-                        elif G.has_edge(labelId[ticker], labelId[other_ticker]):
-                            # Diminui o peso da aresta existente
-                            G[labelId[ticker]][labelId[other_ticker]]['weight'] -= 1
-                            
-                            # Remove a aresta se o peso for <= 0
-                            if G[labelId[ticker]][labelId[other_ticker]]['weight'] <= 0:
-                                G.remove_edge(labelId[ticker], labelId[other_ticker])
+                # Atualizando a rede de co-movimento
+                building_network(correlation_matrix, G, map_label_id)
             
             if len(G.nodes) > 0:
                 # Preparando os dados para inserção
