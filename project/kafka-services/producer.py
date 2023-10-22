@@ -10,8 +10,7 @@ API_KEY = "YOUR_API_KEY"
 KAFKA_BOOTSTRAP_SERVERS = {
     'bootstrap.servers': 'localhost:29092',
 }
-
-KAFKA_TOPIC = "stock_prices"
+KAFKA_TOPIC = "stock-prices"
 
 def fetch_alpha_vantage_data(ticker):
     params = {
@@ -24,32 +23,33 @@ def fetch_alpha_vantage_data(ticker):
     raw_data = response.json()
     
     #DEBUG
-    #print(json.dumps(raw_data, indent=4))
+    print(json.dumps(raw_data, indent=4))
     
-    last_refresh = raw_data['Meta Data']['3. Last Refreshed']
-    last_data = raw_data['Time Series (1min)'][last_refresh]
+    transformed_data_list = []
     
-    transformed_data = {
-        "last_refresh": last_refresh,
-        "open": float(last_data['1. open']),
-        "close": float(last_data['4. close']),
-        "high": float(last_data['2. high']),
-        "low": float(last_data['3. low']),
-        "volume": int(last_data['5. volume'])
-    }
+    for item in raw_data['Time Series (1min)']:
+        content = raw_data['Time Series (1min)'][item]
+        transformed_data = {
+            "time": item,
+            "open": float(content['1. open']),
+            "close": float(content['4. close']),
+            "high": float(content['2. high']),
+            "low": float(content['3. low']),
+            "volume": int(content['5. volume'])
+        }
+        transformed_data_list.append(transformed_data)
     
-    return transformed_data
+    return transformed_data_list
 
 def create_final_payload(tickers):
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     stocks_data = []
     
     for ticker in tickers:
-        price_data = fetch_alpha_vantage_data(ticker)
-        
+        prices_data = fetch_alpha_vantage_data(ticker)
         stock_data = {
             "ticker": ticker,
-            "price_data": price_data
+            "price_data": prices_data
         }
         stocks_data.append(stock_data)
     
@@ -74,8 +74,7 @@ def start_streaming(tickers):
     while True:
         payload = create_final_payload(tickers)
         producer.produce(KAFKA_TOPIC, key=None, value=payload, callback=delivery_report)
-        # Intervalo de 1 minuto para estar em conformidade com o intervalo de tempo da API Alpha Vantage
-        time.sleep(60)  
+        time.sleep(7200) # Intervalo de 2 horas
         
 # Ler tickers do arquivo JSON
 with open('tickers.json', 'r') as file:
