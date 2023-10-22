@@ -3,21 +3,31 @@ import json
 import time
 from confluent_kafka import Producer
 
-# Configurações API
-ALPHA_VANTAGE_API_URL = "https://www.alphavantage.co/query"
-API_KEY = "YOUR_API_KEY"
-# Configurações Kafka
-KAFKA_BOOTSTRAP_SERVERS = {
-    'bootstrap.servers': 'localhost:29092',
-}
-KAFKA_TOPIC = "stock-prices"
+# Configurações do arquivo externo
+with open('producer_config.json', 'r') as file:
+    config = json.load(file)
+
+ALPHA_VANTAGE_API_URL = config['ALPHA_VANTAGE_API_URL']
+ALPHA_VANTAGE_API_KEY = config['ALPHA_VANTAGE_API_KEY']
+KAFKA_BOOTSTRAP_SERVERS = config['KAFKA_BOOTSTRAP_SERVERS']
+KAFKA_TOPIC = config['KAFKA_TOPIC']
+ALPHA_VANTAGE_INTERVAL = config['ALPHA_VANTAGE_INTERVAL']
+ALPHA_VANTAGE_DELAY = config['ALPHA_VANTAGE_DELAY']
 
 def fetch_alpha_vantage_data(ticker):
+    """Busca e transforma dados da API Alpha Vantage para um formato desejado.
+    
+    Args:
+        ticker (str): O código do ativo (por exemplo, "AAPL" para Apple Inc.).
+    
+    Retorna:
+        list: Lista de dados transformados para cada minuto do ticker fornecido.
+    """
     params = {
         "function": "TIME_SERIES_INTRADAY",
         "symbol": ticker,
-        "interval": "1min",
-        "apikey": API_KEY
+        "interval": ALPHA_VANTAGE_INTERVAL,
+        "apikey": ALPHA_VANTAGE_API_KEY
     }
     response = requests.get(ALPHA_VANTAGE_API_URL, params=params)
     raw_data = response.json()
@@ -27,8 +37,8 @@ def fetch_alpha_vantage_data(ticker):
     
     transformed_data_list = []
     
-    for item in raw_data['Time Series (1min)']:
-        content = raw_data['Time Series (1min)'][item]
+    for item in raw_data[f'Time Series ({ALPHA_VANTAGE_INTERVAL})']:
+        content = raw_data[f'Time Series ({ALPHA_VANTAGE_INTERVAL})'][item]
         transformed_data = {
             "time": item,
             "open": float(content['1. open']),
@@ -42,6 +52,14 @@ def fetch_alpha_vantage_data(ticker):
     return transformed_data_list
 
 def create_final_payload(tickers):
+    """Cria a carga útil final para ser enviada para o Kafka.
+    
+    Args:
+        tickers (list): Lista de códigos de ativos para os quais os dados devem ser buscados.
+    
+    Retorna:
+        str: Carga útil em formato JSON para ser enviada para o Kafka.
+    """
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     stocks_data = []
     
@@ -61,7 +79,12 @@ def create_final_payload(tickers):
     return json.dumps(final_payload)
 
 def delivery_report(err, msg):
-    """ Called once for each message produced to indicate delivery result. """
+    """Callback para indicar o resultado da entrega da mensagem ao Kafka.
+    
+    Args:
+        err (Error): Erro ocorrido durante a entrega, se houver.
+        msg (Message): Mensagem que foi entregue ou falhou.
+    """
     if err is not None:
         print(f'Message delivery failed: {err}')
     else:
@@ -69,12 +92,17 @@ def delivery_report(err, msg):
 
    
 def start_streaming(tickers):
+    """Inicia o fluxo contínuo de dados para o Kafka.
+    
+    Args:
+        tickers (list): Lista de códigos de ativos para os quais os dados devem ser buscados.
+    """
     producer = Producer(KAFKA_BOOTSTRAP_SERVERS)
     
     while True:
         payload = create_final_payload(tickers)
         producer.produce(KAFKA_TOPIC, key=None, value=payload, callback=delivery_report)
-        time.sleep(7200) # Intervalo de 2 horas
+        time.sleep(ALPHA_VANTAGE_DELAY)
         
 # Ler tickers do arquivo JSON
 with open('tickers.json', 'r') as file:
