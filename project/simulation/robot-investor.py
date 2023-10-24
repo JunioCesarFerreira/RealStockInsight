@@ -1,6 +1,8 @@
 import requests
 import networkx as nx
 import json
+import threading
+import logging
 
 API_ENDPOINT = "http://localhost:5002/graph"
 
@@ -37,6 +39,18 @@ def request_graph():
         
     return G
 
+def configure_logger(robot_name):
+    """Configura o logger de ações de cada robô."""
+    logger = logging.getLogger(robot_name)
+    logger.setLevel(logging.INFO)
+    
+    # Evita duplicação de logs se o logger já estiver configurado
+    if not logger.handlers:
+        handler = logging.FileHandler(f'{robot_name}_logs.log')
+        handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+        logger.addHandler(handler)
+    return logger
+
 def run_robot(robot_name, parameters, G):
     """Executa o robô para simular a tomada de decisão dos investidores.
 
@@ -56,7 +70,9 @@ def run_robot(robot_name, parameters, G):
     if parameters["eigenvectorCentrality"]["enable"]:
         metrics["eigenvectorCentrality"] = nx.eigenvector_centrality(G)
         
-    print(f"\n{robot_name} Results:")
+    logger = configure_logger(robot_name)  # Configura o logger para este robô
+     
+    logger.info(f"\n{robot_name} Results:")
     for asset, data in G.nodes(data=True):
         acc_metric_value = 0
         acc_threshold = 0
@@ -69,9 +85,9 @@ def run_robot(robot_name, parameters, G):
             metric_value = acc_metric_value / counter
             threshold = acc_threshold / counter
             action = investment_strategy(metric_value, threshold)
-            print(f"Ativo: {data['label']}, Valor: {metric_value:.3f}, Ação: {action}")
+            logger.info(f"ticker: {data['label']}, metric value: {metric_value:.3f}, action: {action}")
         else:
-            print("nenhuma métrica foi selecionada")
+            logger.info("nenhuma métrica foi selecionada")
 
 def investment_strategy(p, t):
     """Define a estratégia de investimento com base na métrica e no limite.
@@ -88,7 +104,18 @@ def investment_strategy(p, t):
     else:
         return "sell"
 
+def thread_run_robot(robot, G):
+    """Função de thread para executar um robô."""
+    run_robot(robot["name"], robot["parameters"][0], G)  
+    
 # Executa cada robô de acordo com as configurações fornecidas
 G = request_graph()  # Solicita o grafo da API
+
+threads = []
 for robot in config["robots"]:
-    run_robot(robot["name"], robot["parameters"][0], G)  # Assumindo que cada robô tem apenas um conjunto de parâmetros
+    t = threading.Thread(target=thread_run_robot, args=(robot,G))
+    threads.append(t)
+    t.start()
+
+for t in threads:
+    t.join()
