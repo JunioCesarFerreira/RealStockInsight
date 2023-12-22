@@ -6,3 +6,4 @@ examples/Kafka_CSharp/Producer/bin
 examples/Kafka_CSharp/Producer/.vs
 examples/Kafka_CSharp/Consumer/obj
 examples/Kafka_CSharp/Producer/obj
+*.tar
