@@ -54,7 +54,7 @@ const Graph = ({ nodes, links, width, height, visualParams }) => {
 		.attr("class", "node")
     .attr("r", d => nodeSizeScale(linkCount[d.id] || 0));
 	
-    const nodeLabels = g.append("g")
+  const nodeLabels = g.append("g")
 		.attr("class", "node-labels")
 		.selectAll("text")
 		.data(nodes)
