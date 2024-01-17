@@ -1,0 +1,12 @@
+{
+    "bootstrap.servers": "kafka:9092",
+    "group.id": "build-trend-consumer",
+    "auto.offset.reset": "earliest",
+    "database":{
+        "dbname":"database",
+        "user":"userDb",
+        "password":"password1234",
+        "host":"rsi-db",
+        "port":"5432"
+    }
+}
