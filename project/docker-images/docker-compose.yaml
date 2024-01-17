@@ -1,0 +1,155 @@
+# Sequência de instanciação de contêiners
+version: "3"
+services:
+# Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: rsi-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+    depends_on:
+      - db
+    networks:
+      - kafka
+  
+# Kafka
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: rsi-kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - 29092:29092
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka
+
+# Kafka-UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: rsi-kafka-ui
+    hostname: kafka-ui
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      PUBLIC_URL: /kafka-ui
+      SERVER_SERVLET_CONTEXT_PATH: /kafka-ui
+    ports:
+      - 8080:8080
+    depends_on:
+      - kafka
+    networks:
+      - kafka
+      - proxy
+
+# Web API utilizada pela UI para visualização grafos
+  api:
+    image: rsi-api:latest
+    container_name: rsi-api
+    ports:
+      - "5002:5002"
+    depends_on:
+      - db
+      - kafka
+    networks:
+      - db
+      - proxy
+      - internal
+
+# Web UI para visualização grafos
+  ui:
+    image: rsi-ui:latest
+    container_name: rsi-ui
+    hostname: ui
+    environment:
+      PUBLIC_URL: /graph-view
+    ports:
+      - "5003:80"
+    depends_on:
+      - api
+    networks:
+      - proxy
+
+# Database
+  db:
+    image: rsi-db:latest
+    container_name: rsi-db
+    ports:
+      - "5432:5432"
+    networks:
+      - db
+
+# Consumer que gera rede complexa  
+  consumer-net:
+    image: rsi-consumer-network:latest
+    container_name: rsi-consumer-network
+    depends_on:
+      - kafka
+    networks:
+      - kafka
+      - db
+
+# Consumer que atualiza tendências
+  consumer-trend:
+    image: rsi-consumer-trend:latest
+    container_name: rsi-consumer-trend
+    depends_on:
+      - kafka
+    networks:
+      - kafka
+      - db
+
+# Producer que insere valores dos ativos
+  producer:
+    image: rsi-producer:latest
+    container_name: rsi-producer
+    depends_on:
+      - kafka
+    networks:
+      - kafka
+      - internal
+
+# Bots
+  investor-bots:
+    image: rsi-investor-bot:latest
+    container_name: rsi-investor-bot
+    depends_on:
+      - api
+      - consumer-net
+      - consumer-trend
+    networks:
+      - internal
+
+# Proxy
+  nginx-proxy:
+    image: rsi-nginx-proxy 
+    container_name: rsi-nginx-proxy
+    ports:
+      - "7061:7061"
+    depends_on:
+      - api
+      - ui
+      - kafka-ui
+    networks:
+      - proxy
+
+# Rede Docker para comunicação entre componentes
+networks:
+  kafka:
+    name: kafka # Rede de elementos que utilizam o Kafka
+  db:
+    name: db # Rede de elementos que acessam o banco de dados
+  proxy:
+    name: proxy # Rede de elementos acessíveis via proxy reverso
+  internal:
+    name: internal # Rede de comunicação interna entre serviços
