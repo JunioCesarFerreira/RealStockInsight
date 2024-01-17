@@ -1,0 +1,12 @@
+{
+    "KAFKA_BOOTSTRAP_SERVERS": {
+        "bootstrap.servers": "kafka:9092"
+    },
+    "KAFKA_TOPIC": "stock-prices",
+    "API":{
+        "URL":"http://api:8080",
+        "URN":"/api/XXX/time-series-daily",
+        "TOKEN":"XXX"
+    },
+    "TIME_SLEEP":60
+}

@@ -1,0 +1,31 @@
+{
+    "tickers" : [
+        "AAPL",
+        "MSFT",
+        "GOOGL",
+        "AMZN",
+        "TSLA",
+        "NVDA",
+        "BABA",
+        "JPM",
+        "INTC",
+        "V",
+        "MA",
+        "UNH",
+        "BAC",
+        "VZ",
+        "WMT",
+        "PG",
+        "XOM",
+        "JNJ",
+        "UNP",
+        "CSCO",
+        "KO",
+        "HD",
+        "ORCL",
+        "MMM",
+        "DIS",
+        "PYPL",
+        "XLV"
+    ]
+}
