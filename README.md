@@ -16,9 +16,9 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 
 ## Fluxo de dados
 
-No diretório `project`, você encontrará uma descrição detalhada do fluxo de dados. O diagrama a seguir oferece uma visão geral:
+No diretório `project`, você encontrará uma descrição detalhada do fluxo de dados. O diagrama a seguir oferece uma visão geral da topologia do sistema:
 
-![Fluxo de dados](https://github.com/JunioCesarFerreira/RealStockInsight/blob/main/doc/images/RealStockInsight.png)
+![Topologia](https://github.com/JunioCesarFerreira/RealStockInsight/blob/main/doc/images/RealStockInsight.png)
 
   
 ## Estrutura do Repositório
