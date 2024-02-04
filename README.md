@@ -39,3 +39,13 @@ Confira na imagem a seguir a interface do usuário desenvolvida com a biblioteca
 
 ![Interface com usuário](https://github.com/JunioCesarFerreira/RealStockInsight/blob/main/doc/images/print-graph-view.png)
   
+
+## Contribuição
+
+Contribuições são sempre bem-vindas! Para contribuir:
+
+1. Faça um fork do projeto.
+2. Crie uma nova branch para suas modificações (`git checkout -b feature/AmazingFeature`).
+3. Faça commit de suas alterações (`git commit -m 'Add some AmazingFeature'`).
+4. Faça push para a branch (`git push origin feature/AmazingFeature`).
+5. Abra um Pull Request.
