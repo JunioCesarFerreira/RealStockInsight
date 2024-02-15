@@ -56,18 +56,18 @@ A análise das simulações é realizada sobre os dados das interações dos bot
 
 1. **Preparando imagens docker**
 
-Para gerar todas as imagens docker utilize o script [`dockerBuildImages.bat`](./dockerBuildImages.bat) para Windows ou [`dockerBuildImages.sh`](./dockerBuildImages.sh) para distribuições Linux. 
+   Para gerar todas as imagens docker utilize o script [`dockerBuildImages.bat`](./dockerBuildImages.bat) para Windows ou [`dockerBuildImages.sh`](./dockerBuildImages.sh) para distribuições Linux. 
 
 2. **Execução dos containers**
 
-Após gerar as imagens docker, no diretório `docker-images` execute:
+   Após gerar as imagens docker, no diretório `docker-images` execute:
 
 ```bash
-docker-compose --project-name realstockinsight up -d
+   docker-compose --project-name realstockinsight up -d
 ```
 
-Para remover os containers utilize:
+   Para remover os containers utilize:
 
 ```bash
-docker-compose --project-name realstockinsight down
+   docker-compose --project-name realstockinsight down
 ```
