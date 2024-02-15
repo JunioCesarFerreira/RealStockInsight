@@ -1,8 +1,10 @@
 # RealStockInsight: Projeto de Rede de Co-Movimentos Financeiros
 
-Neste repositório, você encontrará um projeto que foi desenvolvido para exploração e aprendizado das tecnologias associadas à disciplina de Computação em Nuvem. O objetivo é criar uma aplicação voltada à análise do mercado financeiro por meio de redes complexas, revelando conexões e fornecendo *insights* sobre as interações entre as ações do mercado. Seja bem-vindo e sinta-se à vontade para explorar o código e contribuir!
+## Apresentação
 
-## Descrição
+Neste repositório, você encontrará alguns [exemplos](./examples) e um [projeto](./project) que foram desenvolvidos para exploração e aprendizado das tecnologias associadas à disciplina de Computação em Nuvem. O objetivo é criar uma aplicação voltada à análise do mercado financeiro por meio de redes complexas, revelando conexões e fornecendo *insights* sobre as interações entre as ações do mercado. Seja bem-vindo e sinta-se à vontade para explorar o código e contribuir!
+
+## Descrição do Projeto
 
 Este projeto envolve a construção de uma aplicação distribuída para capturar, processar e visualizar dados financeiros, representando-os como uma rede de co-movimentos interativa. Utilizando uma arquitetura baseada containers, a aplicação é dividida em várias partes que gerenciam a coleta, o processamento e a visualização dos dados financeiros.
 
