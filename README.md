@@ -18,9 +18,9 @@ Este projeto envolve a construção de uma aplicação distribuída para captura
 - **Apache Cassandra:** Na versão atual não é utilizado, mas deixei alguns testes realizados com este tipo de banco de dados para armazenar as redes complexas. [Veja os exemplos](./examples/Cassandra_DB)
 
 
-## Topologia e Fluxo de dados
+## Topologia
 
-No diretório `project`, você encontrará uma descrição detalhada do fluxo de dados. O diagrama a seguir oferece uma visão geral da topologia do sistema:
+O diagrama a seguir oferece uma visão geral da topologia do sistema:
 
 ![Topologia](./doc/images/RealStockInsight.png)
 
