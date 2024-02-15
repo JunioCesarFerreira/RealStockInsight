@@ -15,7 +15,7 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 - **PostgreSQL:** Para armazenar dados diversos.
 - **APIs de Mercado de Ações:** Para coleta de dados em tempo real do mercado.
 
-## Fluxo de dados
+## Topologia e Fluxo de dados
 
 No diretório `project`, você encontrará uma descrição detalhada do fluxo de dados. O diagrama a seguir oferece uma visão geral da topologia do sistema:
 
@@ -40,6 +40,14 @@ Confira na imagem a seguir a interface do usuário desenvolvida com a biblioteca
 
 ![Interface com usuário](https://github.com/JunioCesarFerreira/RealStockInsight/blob/main/doc/images/print-graph-view.png)
   
+
+---
+
+## Licença
+
+Este projeto está licenciado sob a [Licença MIT](LICENSE).
+
+---
 
 ## Contribuição
 
