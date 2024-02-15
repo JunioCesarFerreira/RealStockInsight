@@ -6,7 +6,7 @@ Neste repositório, você encontrará alguns [exemplos](./examples) e um [projet
 
 ## Descrição do Projeto
 
-O objetivo é criar uma aplicação voltada à análise do mercado financeiro por meio de redes complexas, revelando conexões e fornecendo *insights* sobre as interações entre as ações do mercado. Este projeto envolve a construção de uma aplicação distribuída para capturar, processar e visualizar dados financeiros, representando-os como uma rede de co-movimentos interativa. Utilizando uma arquitetura baseada containers, a aplicação é dividida em várias partes que gerenciam a coleta, o processamento e a visualização dos dados financeiros.
+O objetivo é criar uma aplicação voltada à análise do mercado financeiro por meio de redes complexas, revelando conexões e fornecendo *insights* sobre as interações entre as ações do mercado. [Este projeto](./project) envolve a construção de uma aplicação distribuída para capturar, processar e visualizar dados financeiros, representando-os como uma rede de co-movimentos interativa. Utilizando uma arquitetura baseada containers, a aplicação é dividida em várias partes que gerenciam a coleta, o processamento e a visualização dos dados financeiros.
 
 ## Tecnologias Utilizadas
 
@@ -29,11 +29,9 @@ O diagrama a seguir oferece uma visão geral da topologia do sistema:
   
 ## Estrutura do Repositório
 
-- `/project`: Contém todos os projetos e módulos associados ao RealStockInsight.
-- `/docs`: Documentação do projeto, incluindo especificações e design.
-- `/tests`: Testes automatizados para validar a funcionalidade do sistema.
+- `/doc`: Documentação do projeto, incluindo especificações e design.
 - `/examples`: Exemplos elementares de como utilizar algumas das tecnologias envolvidas no projeto.
-- `README.md`: Este arquivo, com informações básicas sobre o projeto.
+- `/project`: Contém todos os projetos e módulos associados ao RealStockInsight.
 
 ## Como Usar
 
