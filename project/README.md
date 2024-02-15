@@ -52,6 +52,22 @@ A análise das simulações é realizada sobre os dados das interações dos bot
    **Nota**: Certifique-se de que todos os serviços estejam rodando e configurados para se comunicar corretamente entre si. O sistema deve ser inicializado na ordem: Cassandra -> Kafka Services -> WebAPI -> Front-End React para garantir que todos os serviços estejam disponíveis quando necessários.
 
 
-### Executando Docker-Compose
+### Ambiente Docker local
 
+1. **Preparando imagens docker**
 
+Para gerar todas as imagens docker utilize o script [`dockerBuildImages.bat`](./dockerBuildImages.bat). 
+
+2. **Execução dos containers**
+
+Após gerar as imagens docker, no diretório `docker-images` execute:
+
+```bash
+docker-compose --project-name realstockinsight up -d
+```
+
+Para remover os containers utilize:
+
+```bash
+docker-compose --project-name realstockinsight down
+```
