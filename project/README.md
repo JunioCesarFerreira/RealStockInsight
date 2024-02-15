@@ -66,6 +66,8 @@ A análise das simulações é realizada sobre os dados das interações dos bot
    docker-compose --project-name realstockinsight up -d
 ```
 
+3. **Removendo containers**
+
    Para remover os containers utilize:
 
 ```bash
