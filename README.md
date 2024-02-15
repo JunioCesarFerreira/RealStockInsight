@@ -1,5 +1,7 @@
 # RealStockInsight: Projeto de Rede de Co-Movimentos Financeiros
 
+🌍 *[Português](README.md) ∙ [English](README_en.md)*
+
 ## Apresentação
 
 Neste repositório, você encontrará alguns [exemplos](./examples) e um [projeto](./project) que foram desenvolvidos para exploração e aprendizado de algumas tecnologias associadas à Computação em Nuvem.  Seja bem-vindo e sinta-se à vontade para explorar o código e contribuir!
