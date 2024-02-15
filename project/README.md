@@ -2,7 +2,7 @@
 
 ## Descrição
 
-Este projeto envolve a construção de uma aplicação distribuída para capturar, processar e visualizar dados financeiros em tempo real, representando-os como uma rede de co-movimentos interativa. Utilizando uma arquitetura baseada em microserviços e ferramentas como Apache Kafka e PostgreSQL, a aplicação é dividida em várias partes que gerenciam a coleta, o processamento e a visualização dos dados financeiros.
+Este projeto envolve a construção de uma aplicação distribuída para capturar, processar e visualizar dados financeiros em tempo real, representando-os como uma rede de co-movimentos interativa. Utilizando uma arquitetura baseada em microserviços, a aplicação é dividida em várias partes que gerenciam a coleta, o processamento e a visualização dos dados financeiros.
 
 O projeto engloba um produtor que interage com uma API para obter valores de ações, ou no caso simulado utiliza um banco de dados local com dados históricos do mercado. O Produtor insere os dados em um tópico no Kafka. Posteriormente, um consumidor processa esses dados, convertendo-os em uma rede de co-movimentos que é armazenada no banco de dados. Adicionalmente, uma API é encarregada de disponibilizar esses dados para uma interface de usuário, a qual visualiza a rede de maneira interativa e visual.
 
