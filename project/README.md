@@ -56,7 +56,7 @@ A análise das simulações é realizada sobre os dados das interações dos bot
 
 1. **Preparando imagens docker**
 
-Para gerar todas as imagens docker utilize o script [`dockerBuildImages.bat`](./dockerBuildImages.bat) para Windows ou [`dockerBuildImages.sh](./dockerBuildImages.sh) para distribuições Linux. 
+Para gerar todas as imagens docker utilize o script [`dockerBuildImages.bat`](./dockerBuildImages.bat) para Windows ou [`dockerBuildImages.sh`](./dockerBuildImages.sh) para distribuições Linux. 
 
 2. **Execução dos containers**
 
