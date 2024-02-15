@@ -7,11 +7,12 @@ Neste repositório, você encontrará um projeto que foi desenvolvido para explo
 ## Tecnologias Utilizadas
 
 - **Apache Kafka:** Para gerenciar fluxos de dados em tempo real.
-- **Apache Cassandra:** Para armazenar dados de redes complexas.
+- **Apache Cassandra:** Cogitado armazenar dados de redes complexas.
 - **Docker:** Para garantir a portabilidade e replicabilidade do ambiente de desenvolvimento e execução.
 - **Networkx:** Biblioteca Python para estudo de redes complexas.
 - **Golang:** Para implementação API.
 - **React:** Para implementaçaõ UI.
+- **PostgreSQL:** Para armazenar dados diversos.
 - **APIs de Mercado de Ações:** Para coleta de dados em tempo real do mercado.
 
 ## Fluxo de dados
