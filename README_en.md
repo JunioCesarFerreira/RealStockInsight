@@ -1,6 +1,6 @@
 # RealStockInsight: Financial Co-Movements Network Project
 
-🌍 *[Português](README.md) ∙ [English](README_en.md)*
+🌍 *[Português](README.md) ∙ [**English**](README_en.md)*
 
 ## Introduction
 
