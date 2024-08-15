@@ -1,6 +1,6 @@
 # RealStockInsight: Projeto de Rede de Co-Movimentos Financeiros
 
-🌍 *[Português](README.md) ∙ [English](README_en.md)*
+🌍 *[**Português**](README.md) ∙ [English](README_en.md)*
 
 ## Apresentação
 
