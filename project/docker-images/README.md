@@ -1,18 +1,18 @@
-# Infraestrutura Docker
+# Docker Infrastructure
 
-Neste diretório temos os seguintes arquivos:
+In this directory we have the following files:
 
-`docker-compose.yaml`: Script de composição da infraestrutura docker a ser provida na VM.
+`docker-compose.yaml`: Script for composing the Docker infrastructure to be provided in the VM.
 
-`load.sh`: Script de automação para criar imagens Docker na VM.
+`load.sh`: Automation script to create Docker images in the VM.
 
-### Pré-requisitos
-- Docker e Docker Compose
+### Prerequisites
+- Docker and Docker Compose
 
-### Modo de usar
+### How to use
 
-Execute o script `load.sh` para gerar as imagens docker.
+Run the `load.sh` script to generate the Docker images.
 
-Em seguida execute `docker-compose up -d` para criar os containers e a rede docker.
+Then run `docker-compose up -d` to create the containers and the Docker network.
 
-Para remover os containers utilize `docker-compose down`.
+To remove the containers use `docker-compose down`.

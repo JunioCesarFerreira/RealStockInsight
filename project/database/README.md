@@ -1,23 +1,22 @@
-# Banco de dados PostgreSQL
+# PostgreSQL Database
 
-Neste diretório estão os arquivos necessários para configurar e executar um contêiner Docker do PostgreSQL. O Dockerfile cria uma imagem com o Postgres instalado e expõe a porta 5432. O script `schema.sql` é utilizado para criar a tabela utilizada.
+This directory contains the files needed to configure and run a PostgreSQL Docker container. The Dockerfile creates an image with Postgres installed and exposes port 5432. The `schema.sql` script is used to create the table used.
 
-## Configuração e Execução
+## Configuration and Execution
 
-Siga as instruções abaixo para configurar e executar o projeto:
+Follow the instructions below to configure and run the project:
 
-### 1. Configurar o ambiente
+### 1. Configure the environment
 
-Certifique-se de ter as seguintes ferramentas e dependências instaladas:
+Make sure you have the following tools and dependencies installed:
 
 - Docker
 
-### 2. Configurar e iniciar o postgreSQL
+### 2. Configure and start postgreSQL
 
-No diretório `postgresql`, execute os seguintes comandos para configurar e iniciar o Cassandra em um contêiner Docker:
+In the `postgresql` directory, run the following commands to configure and start Cassandra in a Docker container:
 
 ```sh
 docker build -t postgres-db .
 docker run -d --name postgres-db -p 5432:5432 postgres-db
 ```
-

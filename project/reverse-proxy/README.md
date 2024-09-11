@@ -1,11 +1,11 @@
-# Proxy reverso
+# Reverse proxy
 
-Neste diretório estão os arquivos de confguração do proxy reverso com Nginx e o dockerfile de geração da imagem do Nginx.
+This directory contains the configuration files for the reverse proxy with Nginx and the dockerfile for generating the Nginx image.
 
-Por meio deste proxy é possível acessar duas UIs e uma API, sendo:
+Through this proxy, it is possible to access two UIs and one API, namely:
 
-- Kafka-UI: UI de visualização dos dados do Kafka.
+- Kafka-UI: UI for visualizing Kafka data.
 
-- graph-view: UI de visualização da rede complexa.
+- graph-view: UI for visualizing the complex network.
 
-- webapi: API de acesso aos dados pré-processados sobre o mercado.
+- webapi: API for accessing pre-processed market data.

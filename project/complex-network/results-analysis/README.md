@@ -1,5 +1,5 @@
-# Análise de resultados
+# Analysis of results
 
-Neste diretório está o script Python para realizar análise dos resultados obtidos pelas simulações com bots de investimento.
+This directory contains the Python script to analyze the results obtained by simulations with investment bots.
 
-O arquivo bot_log.db é um sqlite que contém os logs dos bots. Enquanto os arquivos *.txt* são resultados de análises de simulações realizadas.
+The bot_log.db file is an SQLite file that contains the bot logs. While the *.txt* files are results of analyses of simulations performed.

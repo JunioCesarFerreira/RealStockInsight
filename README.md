@@ -1,69 +1,68 @@
-# RealStockInsight: Projeto de Rede de Co-Movimentos Financeiros
+# RealStockInsight: Financial Co-Movements Network Project
 
-🌍 *[**Português**](README.md) ∙ [English](README_en.md)*
+🌍 *[Português](README_pt.md) ∙ [**English**](README.md)*
 
-## Apresentação
+## Introduction
 
-Neste repositório, você encontrará alguns [exemplos](./examples) e um [projeto](./project) que foram desenvolvidos para exploração e aprendizado de algumas tecnologias associadas à Computação em Nuvem.  Seja bem-vindo e sinta-se à vontade para explorar o código e contribuir!
+In this repository, you will find some [examples](./examples) and a [project](./project) that have been developed for exploration and learning of some technologies associated with Cloud Computing and Complex Networks. Feel free to explore the code and contribute!
 
-## Descrição do Projeto
+## Project Description
 
-O objetivo é criar uma aplicação voltada à análise do mercado financeiro por meio de redes complexas, revelando conexões e fornecendo *insights* sobre as interações entre as ações do mercado. [Este projeto](./project) envolve a construção de uma aplicação distribuída para capturar, processar e visualizar dados financeiros, representando-os como uma rede de co-movimentos interativa. Utilizando uma arquitetura baseada containers, a aplicação é dividida em várias partes que gerenciam a coleta, o processamento e a visualização dos dados financeiros.
+The goal is to create an application focused on analyzing the financial market through complex networks, revealing connections, and providing insights into interactions among market actions. [This project](./project) involves building a distributed application to capture, process, and visualize financial data, representing them as an interactive network of co-movements. Using a container-based architecture, the application is divided into several parts that manage the collection, processing, and visualization of financial data.
 
-## Tecnologias Utilizadas
+## Technologies Used
 
-- **Apache Kafka:** Para gerenciar fluxos de dados em tempo real.- **Docker:** Para garantir a portabilidade e replicabilidade do ambiente de desenvolvimento e execução.
-- **Python:** Utilizados nos serviços produtores e consumidores do Kafka.
-- **Networkx:** Biblioteca Python para estudo de redes complexas.
-- **Golang:** Para implementação API.
-- **React:** Para implementaçaõ UI.
-- **PostgreSQL:** Para armazenar dados diversos.
-- **APIs de Mercado de Ações:** Para coleta de dados em tempo real do mercado.
-- **Apache Cassandra:** Na versão atual não é utilizado, mas deixei alguns testes realizados com este tipo de banco de dados para armazenar as redes complexas. [Veja os exemplos](./examples/Cassandra_DB)
+- **Apache Kafka:** To manage real-time data streams.
+- **Docker:** To ensure the portability and replicability of the development and execution environment.
+- **Python:** Used in Kafka producer and consumer services.
+- **Networkx:** Python library for the study of complex networks.
+- **Golang:** For API implementation.
+- **React:** For UI implementation.
+- **PostgreSQL:** To store various data.
+- **Stock Market APIs:** For real-time market data collection.
+- **Apache Cassandra:** Not used in the current version, but there are some tests done with this type of database to store complex networks. [See examples](./examples/Cassandra_DB)
 
+## Topology
 
-## Topologia
+The following diagram provides an overview of the system's topology:
 
-O diagrama a seguir oferece uma visão geral da topologia do sistema:
-
-![Topologia](./doc/images/RealStockInsight.png)
+![Topology](./doc/images/RealStockInsight.png)
 
   
-## Estrutura do Repositório
+## Repository Structure
 
-- `/doc`: Documentação do projeto, incluindo especificações e design.
-- `/examples`: Exemplos elementares de como utilizar algumas das tecnologias envolvidas no projeto.
-- `/project`: Contém todos os projetos e módulos associados ao RealStockInsight.
+- `/doc`: Project documentation, including specifications and design.
+- `/examples`: Elementary examples of how to use some of the technologies involved in the project.
+- `/project`: Contains all projects and modules associated with RealStockInsight.
 
-## Como Usar
+## How to Use
 
-As instruções de uso são detalhadamente delineadas nos arquivos `README` dos exemplos. Você pode encontrar orientações sobre depuração e configuração do ambiente utilizando Docker no [README](./project/README.md) localizado no diretório `project`.
+Usage instructions are thoroughly outlined in the `README` files of the examples. You can find guidance on debugging and configuring the environment using Docker in the [README](./project/README.md) located in the `project` directory.
 
-## Interface com usuário
+## User Interface
 
-Confira na imagem a seguir a interface do usuário desenvolvida com a biblioteca D3.
+Check out the following image for the user interface developed with the D3 library.
 
-![Interface com usuário](./doc/images/print-graph-view.png)
+![User Interface](./doc/images/print-graph-view.png)
   
 
 ---
 
-## Licença
+## License
 
-Este projeto está licenciado sob a [Licença MIT](LICENSE).
-
----
-
-## Contribuição
-
-Contribuições são sempre bem-vindas! Para contribuir:
-
-1. Faça um fork do projeto.
-2. Crie uma nova branch para suas modificações (`git checkout -b feature/AmazingFeature`).
-3. Faça commit de suas alterações (`git commit -m 'Add some AmazingFeature'`).
-4. Faça push para a branch (`git push origin feature/AmazingFeature`).
-5. Abra um Pull Request.
-
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
+## Contribution
+
+Contributions are always welcome! To contribute:
+
+1. Fork the project.
+2. Create a new branch for your modifications (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+
+---

@@ -1,3 +1,3 @@
-# Rede de Co-Movimentos Financeiros
+# Financial Co-Movement Network
 
-Neste diretório estão os scripts dos robôs que simulam investidores tomando decisões utilizando medidas de centralidade das redes complexas de co-movimentos. Além disso, neste diretório está o script de análise dos resultados das simulações com os robôs. 
+This directory contains the scripts for the robots that simulate investors making decisions using centrality measures of complex co-movement networks. In addition, this directory contains the script for analyzing the results of simulations with the robots.

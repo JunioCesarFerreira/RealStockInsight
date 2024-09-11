@@ -1,33 +1,33 @@
-# Serviços Kafka
+# Kafka Services
 
-Este diretório contém os serviços relacionadas à construção da rede de co-movimentos que utilizam o Apache Kafka.
+This directory contains the services related to building the co-movement network that use Apache Kafka.
 
-## Descrição
+## Description
 
-- `consumer-network`: Consumer Kafka, consome o tópico *stock-prices* calcula as correlações dos ativos, gera a rede complexa de co-movimentos e registra seu grafo no banco de dados.
+- `consumer-network`: Kafka Consumer, consumes the *stock-prices* topic, calculates the correlations of the assets, generates the complex co-movement network and registers its graph in the database.
 
-- `consumer-trend`: Consumer Kafka, consome o tópico *stock-prices* calcula tendência com base na média móvel e registra na tabela de tendências no banco de dados.
+- `consumer-trend`: Kafka Consumer, consumes the *stock-prices* topic, calculates the trend based on the moving average and registers it in the trends table in the database.
 
-- `producer`: Producer Kafka, acessa a API e produz dados no tópico *stock-prices*.
-
----
-	
-## Tópicos Kafka
-
-- `stock-prices`: Preços obtidos via API e consumidos para construção de tendênicas e rede de co-movimentos.
-
-- `purchase-and-sale`: Compras e vendas realizadas via API.
+- `producer`: Kafka Producer, accesses the API and produces data in the *stock-prices* topic.
 
 ---
-   
-### Pré-requisitos
-- Docker e Docker Compose
-- Python (para os serviços Kafka)
 
-### Executando o Projeto
+## Kafka Topics
 
-Para execução do projeto é necessário estar com os contêiners do Kafka e do Postgres em execução.
+- `stock-prices`: Prices obtained via API and consumed to build trends and co-movement network.
 
-Os scripts Python do Producer e Consumer podem ser executados no VS Code.
+- `purchase-and-sale`: Purchases and sales made via API.
 
-Utilize o Kafka UI para verificar se houve efeito na execução do Producer e do Consumer.
+---
+
+### Prerequisites
+- Docker and Docker Compose
+- Python (for Kafka services)
+
+### Running the Project
+
+To run the project, you must have the Kafka and Postgres containers running.
+
+The Producer and Consumer Python scripts can be run in VS Code.
+
+Use the Kafka UI to check if the Producer and Consumer have had any effect.

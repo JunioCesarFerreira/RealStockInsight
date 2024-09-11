@@ -1,13 +1,13 @@
 # PostgreSQL
 
-- **Dockerfile**: Define a imagem Docker para o PostgreSQL, expondo a porta 5432 e executando o PostgreSQL em primeiro plano.
+- **Dockerfile**: Defines the Docker image for PostgreSQL, exposing port 5432 and running PostgreSQL in the foreground.
 
-- **schema.sql**: Script SQL das tabelas utilizadas no projeto, sendo:
+- **schema.sql**: SQL script of the tables used in the project, being:
 
-    - COMPLEX_NETWORK_GRAPHS: Armazena rede complexa de co-movimentos.
+- COMPLEX_NETWORK_GRAPHS: Stores complex network of co-movements.
 
-    - TRENDS: Armazena tendências de mercado.
+- TRENDS: Stores market trends.
 
-    - STOCK_EXCHANGES: Armazena transações realizadas na rede.
+- STOCK_EXCHANGES: Stores transactions made on the network.
 
-    - TRADERS: Armazena investidores cadastrados na rede.
+- TRADERS: Stores investors registered on the network.
