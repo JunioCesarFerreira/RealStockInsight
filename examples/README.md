@@ -1,20 +1,22 @@
-# Exemplos de Uso
+# Usage Examples
 
-Este subdiretório foi criado para fornecer exemplos práticos de como utilizar as tecnologias empregadas no projeto principal. Aqui, você encontrará uma variedade de exemplos, cada um em seu respectivo diretório, demonstrando diferentes aspectos e funcionalidades das tecnologias utilizadas.
+🌍 *[Português](README_pt.md) ∙ [**English**](README.md)*
 
-## Estrutura do diretório
+This subdirectory was created to provide practical examples of how to use the technologies employed in the main project. Here, you will find a variety of examples, each in its respective directory, demonstrating different aspects and functionalities of the technologies used.
 
-Cada diretório dentro de `examples` representa um exemplo específico e deve conter:
+## Directory structure
 
-- Um breve "README" descrevendo o propósito do exemplo e como executá-lo.
-- Códigos-fonte.
-- Imagens ou outros recursos necessários para o exemplo.
+Each directory within `examples` represents a specific example and should contain:
 
-## Resumo dos exemplos disponíveis:
+- A brief "README" describing the purpose of the example and how to run it.
+- Source codes.
+- Images or other resources required for the example.
 
-- `Cassandra_DB`: Este contém um exemplo de como utilizar o Apache Cassandra com Docker, com um exemplo de inserção em Python e uma API de consumo em Go.
-- `Graph_React`: Exemplo de uso da biblioteca D3 para visualização de redes complexas com React.
-- `Kafka_CSharp`: Exemplo de uso de biblioteca de produção e consumo Kafka em C#.
-- `Kafka_Complex_Networks`: Exemplo de uso de construção de uma rede de co-movimentos utilizando tópicos no Kafka.
-- `Kafka_Golang`: Exemplo de uso de biblioteca de produção e consumo Kafka em Golang.
-- `Kafka_Python`:  Exemplo de uso de biblioteca de produção e consumo Kafka em Python.
+## Summary of available examples:
+
+- `Cassandra_DB`: This contains an example of how to use Apache Cassandra with Docker, with an insertion example in Python and a consumption API in Go.
+- `Graph_React`: Example of using the D3 library to visualize complex networks with React.
+- `Kafka_CSharp`: Example of using the Kafka production and consumption library in C#.
+- `Kafka_Complex_Networks`: Example of using a co-movement network using topics in Kafka.
+- `Kafka_Golang`: Example of using the Kafka production and consumption library in Golang.
+- `Kafka_Python`: Example of using the Kafka production and consumption library in Python.
