@@ -56,22 +56,34 @@ A análise das simulações é realizada sobre os dados das interações dos bot
 
 ### Ambiente Docker local
 
-1. **Preparando imagens docker**
+Toda a stack está descrita em um único [`docker-compose.yaml`](./docker-compose.yaml) que constrói cada imagem diretamente a partir do código-fonte. Não são necessários scripts de build separados.
 
-   Para gerar todas as imagens docker utilize o script [`dockerBuildImages.bat`](./dockerBuildImages.bat) para Windows ou [`dockerBuildImages.sh`](./dockerBuildImages.sh) para distribuições Linux. 
+1. **Construindo as imagens**
+
+   No diretório `project`, construa todas as imagens com:
+
+```bash
+   docker compose build
+```
 
 2. **Execução dos containers**
 
-   Após gerar as imagens docker, no diretório `docker-images` execute:
+   Suba toda a stack (as imagens são construídas automaticamente se não existirem):
 
 ```bash
-   docker-compose --project-name realstockinsight up -d
+   docker compose -p realstockinsight up -d
+```
+
+   Para forçar a reconstrução antes de subir, adicione `--build`:
+
+```bash
+   docker compose -p realstockinsight up -d --build
 ```
 
 3. **Removendo containers**
 
-   Para remover os containers utilize:
+   Para remover os containers e a rede Docker:
 
 ```bash
-   docker-compose --project-name realstockinsight down
+   docker compose -p realstockinsight down
 ```

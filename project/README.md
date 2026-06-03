@@ -55,22 +55,34 @@ The simulation analysis is performed on the bot interaction data stored in the d
 
 ### Local Docker Environment
 
-1. **Preparing Docker Images**
+The entire stack is described in a single [`docker-compose.yaml`](./docker-compose.yaml) that builds every image directly from its source. No separate build scripts are needed.
 
-   To build all Docker images, use the [`dockerBuildImages.bat`](./dockerBuildImages.bat) script for Windows or [`dockerBuildImages.sh`](./dockerBuildImages.sh) for Linux distributions.
+1. **Building the Images**
+
+   From the `project` directory, build all images with:
+
+```bash
+   docker compose build
+```
 
 2. **Running the Containers**
 
-   After building the Docker images, navigate to the `docker-images` directory and execute:
+   Start the whole stack (images are built automatically if missing):
 
 ```bash
-   docker-compose --project-name realstockinsight up -d
+   docker compose -p realstockinsight up -d
+```
+
+   To force a rebuild before starting, add `--build`:
+
+```bash
+   docker compose -p realstockinsight up -d --build
 ```
 
 3. **Removing Containers**
 
-   To remove the containers, use:
+   To remove the containers and the Docker network:
 
 ```bash
-   docker-compose --project-name realstockinsight down
+   docker compose -p realstockinsight down
 ```
