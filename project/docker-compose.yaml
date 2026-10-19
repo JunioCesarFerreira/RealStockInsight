@@ -18,6 +18,12 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 22181:2181
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     networks:
       - kafka
 
@@ -34,8 +40,16 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
       - 29092:29092
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     networks:
       - kafka
 
@@ -65,6 +79,12 @@ services:
     container_name: rsi-db
     ports:
       - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U userDb -d database"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     networks:
       - db
 
@@ -75,9 +95,12 @@ services:
     container_name: rsi-api
     ports:
       - "5002:5002"
+    restart: unless-stopped
     depends_on:
-      - db
-      - kafka
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - db
       - proxy
@@ -103,8 +126,12 @@ services:
     build: ./kafka-services/consumer-network
     image: rsi-consumer-network:latest
     container_name: rsi-consumer-network
+    restart: unless-stopped
     depends_on:
-      - kafka
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - kafka
       - db
@@ -114,8 +141,12 @@ services:
     build: ./kafka-services/consumer-trend
     image: rsi-consumer-trend:latest
     container_name: rsi-consumer-trend
+    restart: unless-stopped
     depends_on:
-      - kafka
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - kafka
       - db
@@ -125,8 +156,10 @@ services:
     build: ./kafka-services/producer
     image: rsi-producer:latest
     container_name: rsi-producer
+    restart: unless-stopped
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     networks:
       - kafka
       - internal
@@ -136,6 +169,7 @@ services:
     build: ./complex-network/simulation
     image: rsi-investor-bot:latest
     container_name: rsi-investor-bot
+    restart: unless-stopped
     depends_on:
       - api
       - consumer-net
@@ -149,7 +183,7 @@ services:
     image: rsi-nginx-proxy:latest
     container_name: rsi-nginx-proxy
     ports:
-      - "7061:7061"
+      - "8298:7061"
     depends_on:
       - api
       - ui
