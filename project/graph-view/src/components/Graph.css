@@ -14,8 +14,7 @@ body {
     flex-direction: column; /* Ajuste para organizar os itens em uma coluna */
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    width: 100vw;
+    gap: 12px;
   }
 
   .node {

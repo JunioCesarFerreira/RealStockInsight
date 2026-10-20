@@ -6,10 +6,14 @@ import math
 import sqlite3
 import networkx as nx
 from queue import Queue
-from threading import Thread
+from threading import Lock, Thread
+from monitor import Monitor
 
 API_GRAPH_ENDPOINT = "http://localhost:5002/api/graph"
 API_TREND_ENDPOINT = "http://localhost:5002/api/trend"
+
+# Serializa as escritas no SQLite: todos os bots (threads) gravam no mesmo arquivo
+log_lock = Lock()
 
 # Classe Robô Investidor
 class Bot:
@@ -35,11 +39,11 @@ def create_table_repository():
             available_resources REAL,
             assets TEXT)
         ''')
-    
+
     conn.execute("DELETE FROM log_table")
 
     conn.close()
-  
+
 def insert_log_repository(bot_name, bot_id, ticker, metric_value, action, available_resources, assets):
     """Insere dados no log
 
@@ -51,16 +55,17 @@ def insert_log_repository(bot_name, bot_id, ticker, metric_value, action, availa
         action (text): Ação que o bot realizou
         available_resources (real): Quantidade de recursos do bot
     """
-    conn = sqlite3.connect("bot_log.db")
-
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    
-    conn.execute("INSERT INTO log_table VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-                 (bot_name, bot_id, ticker, timestamp, metric_value, action, available_resources, assets))
-    
-    conn.commit()
-    
-    conn.close()
+
+    with log_lock:
+        conn = sqlite3.connect("bot_log.db", timeout=30)
+
+        conn.execute("INSERT INTO log_table VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                     (bot_name, bot_id, ticker, timestamp, metric_value, action, available_resources, assets))
+
+        conn.commit()
+
+        conn.close()
 
 def request_graph():
     """Realiza request na API e monta um objeto networkx.Graph.
@@ -71,17 +76,14 @@ def request_graph():
     headers = {
         'accept': 'application/json'
     }
-    print("request:", API_GRAPH_ENDPOINT)
     # Realiza o request à API para obter rede complexa atualizada
-    response = requests.get(API_GRAPH_ENDPOINT, headers=headers)
-    data = json.loads(response.text)
-    
-    print("response.json.length:", len(data))
+    response = requests.get(API_GRAPH_ENDPOINT, headers=headers, timeout=30)
+    response.raise_for_status()
+    data = response.json()
 
     # Verifica se a resposta da API está em um formato adequado
-    if not data or "nodes" not in data or "links" not in data:
-        print("Resposta da API inválida!")
-        exit(1)
+    if not isinstance(data, dict) or "nodes" not in data or "links" not in data:
+        raise ValueError("Resposta da API de grafo inválida")
 
     G = nx.Graph()
 
@@ -92,32 +94,26 @@ def request_graph():
     # Adiciona as arestas ao gráfico
     for edge in data["links"]:
         G.add_edge(edge["source"], edge["target"], weight=edge["weight"])
-        
+
     return G
 
 
 def request_trend():
     """Obtém tendências e preços da API e retorna como um dicionário."""
-    print("request:", API_TREND_ENDPOINT)
     headers = {
         'accept': 'application/json'
     }
-    response = requests.get(API_TREND_ENDPOINT, headers=headers)
-    
-    if response.status_code != 200:
-        print(f"Erro ao acessar a API. Código de status: {response.status_code}")
-        return {}
-    
-    trends_list = response.json()
-    
-    print("response.length:", len(trends_list))
-    
+    response = requests.get(API_TREND_ENDPOINT, headers=headers, timeout=30)
+    response.raise_for_status()
+
+    trends_list = response.json() or []
+
     trends_dict = {
         item['ticker']: {
             "trend": item['trend'],
             "price": item['price']
             } for item in trends_list}
-    
+
     return trends_dict
 
 def run_robot(bot, parameters, G, trends):
@@ -128,44 +124,52 @@ def run_robot(bot, parameters, G, trends):
         parameters (dict): Parâmetros para métricas específicas.
         G (networkx.Graph): Grafo representando a rede de co-movimentos.
 
+    Returns:
+        dict: Quantidade de decisões de cada tipo (buy, sell, hold) e ativos sem tendência (skipped).
     """
     metrics = {}
+    decisions = {"buy": 0, "sell": 0, "hold": 0, "skipped": 0}
 
     # Calcula as métricas de acordo com os parâmetros fornecidos
     if parameters["degreeCentrality"]["enable"]:
         metrics["degreeCentrality"] = nx.degree_centrality(G)
-        
+
     if parameters["pagerank"]["enable"]:
         metrics["pagerank"] = nx.pagerank(G)
-        
+
     if parameters["closenessCentrality"]["enable"]:
         metrics["closenessCentrality"] = nx.closeness_centrality(G)
-        
+
     if parameters["betweennessCentrality"]["enable"]:
-        metrics["betweennessCentrality"] = nx.betweenness_centrality(G)    
-        
+        metrics["betweennessCentrality"] = nx.betweenness_centrality(G)
+
     if parameters["eigenvectorCentrality"]["enable"]:
         metrics["eigenvectorCentrality"] = nx.eigenvector_centrality(G)
-         
+
     for asset, data in G.nodes(data=True):
         ticker = data['label']
-        trend = trends[ticker]["trend"] 
+        if ticker not in trends:
+            # Tendência ainda não calculada pelo consumer-trend
+            decisions["skipped"] += 1
+            continue
+        trend = trends[ticker]["trend"]
         price = trends[ticker]["price"]
         acc_metric_value = 0
         acc_threshold = 0
         counter = 0
-        
+
         for metric_name, metric_values in metrics.items():
             acc_metric_value += metric_values[asset]
             acc_threshold += parameters[metric_name]["threshold"]
             counter += 1
-            
+
         if counter > 0:
             metric_value = acc_metric_value / counter
             threshold = acc_threshold / counter
-            
+
             action = investment_strategy(metric_value, threshold, trend=trend)
-            
+            decisions[action] += 1
+
             if action == "buy":
                 if bot.money > price:
                     # Compra porcentagem fixa! Pensar em estratégias mais dinâmicas!
@@ -174,25 +178,25 @@ def run_robot(bot, parameters, G, trends):
                     if amount==0:
                         amount = 1
                     #bot.buy_active(ticker, amount, price)
-                    
+
             elif action == "sell":
                 # Vende tudo! Pensar em estratégias mais dinâmicas!
-                if ticker not in bot.assets:
-                    print('O bot não tem ativo para vender.')
-                else:
+                if ticker in bot.assets:
                     amount = bot.assets[ticker]
                     #bot.sell_active(ticker, amount, price)
-            
+
             assets_txt = json.dumps(bot.assets)
             insert_log_repository(bot.name, bot.id, ticker, metric_value, action, bot.money, assets_txt)
         else:
-            print(f"Nenhuma métrica foi selecionada para o bot {bot.name}")
+            raise ValueError(f"Nenhuma métrica foi selecionada para o bot {bot.name}")
+
+    return decisions
 
 
 def investment_strategy(p, t, trend=None):
     """
     Define a estratégia de investimento com base na métrica, no limite e na tendência atual.
-    
+
     Args:
         p (float): Valor da métrica.
         t (float): Valor do limite (threshold).
@@ -208,27 +212,53 @@ def investment_strategy(p, t, trend=None):
         return "sell"
     else:
         return "hold"
-   
 
-def thread_run_robot(robot, queue):
+
+def describe_strategy(parameters):
+    """Descrição curta das métricas habilitadas e seus limites."""
+    enabled = [f"{name} > {p['threshold']}" for name, p in parameters.items() if p["enable"]]
+    return ", ".join(enabled) if enabled else "nenhuma métrica"
+
+
+def thread_run_robot(robot, queue, mon):
     """Função de thread para executar um robô."""
-    print(f"bot:{robot['name']}")
-    
     with open('initial_assets.json', 'r') as file:
         initial_assets = json.load(file)
-    
+
     bot = Bot(robot["id"], robot["name"], robot["initialMoney"], initial_assets=initial_assets)
-    
+    totals = {"buy": 0, "sell": 0, "hold": 0}
+    cycles = 0
+
     while True:
         # Verifica se a thread deve ser encerrada
         if queue.empty():
             break
-    
-        G = request_graph()  # Solicita o grafo da API
-        trends = request_trend() # Solicita tendências da API
-        
-        run_robot(bot, robot["parameters"][0], G, trends)
-        
+
+        try:
+            G = request_graph()  # Solicita o grafo da API
+            if G.number_of_nodes() == 0:
+                mon.state("waiting", "Aguardando a primeira rede de co-movimento (consumer-network)")
+            else:
+                trends = request_trend() # Solicita tendências da API
+                if not trends:
+                    mon.state("waiting", "Aguardando tendências (consumer-trend)")
+                else:
+                    decisions = run_robot(bot, robot["parameters"][0], G, trends)
+                    cycles += 1
+                    for action in totals:
+                        totals[action] += decisions[action]
+                    mon.set(cycles=cycles, last_cycle_at=time.time(), money=bot.money,
+                            last_buy=decisions["buy"], last_sell=decisions["sell"], last_hold=decisions["hold"],
+                            total_buy=totals["buy"], total_sell=totals["sell"], total_hold=totals["hold"])
+                    mon.state("running", f"Avaliando {G.number_of_nodes()} ativos a cada {robot['interval']}s")
+                    mon.info(f"Ciclo {cycles}: {decisions['buy']} compra, {decisions['sell']} venda, "
+                             f"{decisions['hold']} manter" +
+                             (f", {decisions['skipped']} sem tendência" if decisions["skipped"] else ""))
+        except Exception as e:
+            mon.incr("errors")
+            mon.state("error", str(e))
+            mon.error(f"Falha no ciclo do bot: {e}")
+
         time.sleep(robot["interval"])
 
 
@@ -242,9 +272,9 @@ if __name__=="__main__":
         print("is debug")
     else:
         print("not is debug")
-        
+
     create_table_repository()
-        
+
     # Lê o arquivo de configuração que contém informações sobre os robôs
     try:
         with open('config.json', 'r') as file:
@@ -257,9 +287,19 @@ if __name__=="__main__":
         print(f"Falha ao ler configurações: {e}")
         exit(1)
 
+    # Um monitor por bot, para que cada um apareça no painel
+    monitors = {}
+    for robot in config["robots"]:
+        mon = Monitor("investor-bot", instance=robot["name"], interval=15)
+        mon.set(strategy=describe_strategy(robot["parameters"][0]), interval_s=robot["interval"],
+                initial_money=robot["initialMoney"])
+        monitors[robot["name"]] = mon
+
     # Atraso na inicialização
     print("waiting...")
     if is_debug == False:
+        for mon in monitors.values():
+            mon.state("starting", "Aguardando 60s para os demais serviços iniciarem")
         time.sleep(60) # Espera um minuto para garantir que outras partes já estejam em execução.
 
     # Inicializa a fila e as threads
@@ -269,12 +309,12 @@ if __name__=="__main__":
     # Adiciona um item na fila para cada robô
     for _ in config["robots"]:
         queue.put(None)
-        
+
     print("starting bots...")
 
     # Cria e inicia as threads
     for robot in config["robots"]:
-        t = Thread(target=thread_run_robot, args=(robot, queue))
+        t = Thread(target=thread_run_robot, args=(robot, queue, monitors[robot["name"]]))
         threads.append(t)
         t.start()
 

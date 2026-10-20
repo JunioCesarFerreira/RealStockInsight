@@ -1,38 +1,97 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 24px;
+  padding: 12px 24px;
+  background: #111317;
+  border-bottom: 1px solid #2a2e35;
 }
 
-.App-link {
-  color: #61dafb;
+.app-brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.app-nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.app-nav a {
+  color: #aab2bf;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.app-nav a:hover {
+  color: #ecf0f1;
+  background: #1c2027;
+}
+
+.app-nav a.active {
+  color: #ecf0f1;
+  background: #262b33;
+}
+
+main {
+  padding: 24px;
+}
+
+.graph-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.graph-toolbar h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.graph-summary {
+  color: #aab2bf;
+}
+
+.graph-message {
+  color: #aab2bf;
+}
+
+.graph-message a {
+  color: #6cb6ff;
+}
+
+.graph-message-error {
+  color: #ff7b72;
+}
+
+button {
+  background: #262b33;
+  color: #ecf0f1;
+  border: 1px solid #3a404a;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 600px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
   }
-  to {
-    transform: rotate(360deg);
+
+  main {
+    padding: 16px;
   }
 }

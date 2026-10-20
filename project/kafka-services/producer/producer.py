@@ -4,8 +4,14 @@ import json
 import time
 import sqlite3
 from confluent_kafka import Producer
+from monitor import Monitor
 
 db_file = "database.db"
+
+# Quantidade de registros enviados por ativo em cada mensagem
+WINDOW = 60
+
+mon = Monitor("producer")
 
 def build_repository(ticker, data):
   """
@@ -27,7 +33,7 @@ def build_repository(ticker, data):
 
   conn.commit()
   conn.close()
-  
+
 def pop_repository(ticker):
   """
   Recupera os dados do banco local em ordem crescente pelo time stamp.
@@ -38,20 +44,19 @@ def pop_repository(ticker):
   conn = sqlite3.connect(db_file)
 
   cursor = conn.cursor()
-  
+
   cursor.execute("SELECT * FROM datatable WHERE ticker = ? ORDER BY time_stamp ASC", (ticker,))
-  
+
   data = cursor.fetchall()
-  
+
   result = []
-  for i in range(60):
+  for i in range(min(WINDOW, len(data))):
     top = data[i]
-  
+
     if i==0:
-        print(f"delete: {top[1]} {top[0]}")
         cursor.execute("DELETE FROM datatable WHERE time_stamp = ? AND ticker= ?", (top[1], top[0],))
         conn.commit()
-  
+
     result.append({
       "time":top[1],
       "open":top[2],
@@ -64,23 +69,21 @@ def pop_repository(ticker):
   conn.close()
   return result
 
-def has_data_repository():
+def remaining_messages(tickers):
+    """Quantidade de mensagens que ainda podem ser enviadas com janela completa para todos os ativos."""
     conn = sqlite3.connect(db_file)
 
     cursor = conn.cursor()
-  
-    cursor.execute("SELECT COUNT(*) FROM datatable")
-      
-    rows_count = cursor.fetchone()[0]
-    
+
+    cursor.execute("SELECT ticker, COUNT(*) FROM datatable GROUP BY ticker")
+
+    rows_count = dict(cursor.fetchall())
+
     conn.close()
-    
-    if rows_count == 0:
-        os.remove("./" + db_file)
-        return False
-    else:
-        return True
-    
+
+    smallest = min(rows_count.get(ticker, 0) for ticker in tickers)
+    return max(smallest - WINDOW + 1, 0)
+
 
 def get_daily_time_series(ticker, uri, apiKey):
     """Realiza request na API
@@ -101,9 +104,9 @@ def get_daily_time_series(ticker, uri, apiKey):
         'ticker': ticker,
         'compact': 'false'
     }
-    
+
     response = requests.get(uri, headers=headers, params=params)
-    
+
     if response.status_code == 200:
         return response.json()
     else:
@@ -111,31 +114,31 @@ def get_daily_time_series(ticker, uri, apiKey):
 
 def create_database(tickers, uri, apiKey):
     """Cria a base de dados para ser enviada aos poucos para o Kafka.
-    
+
     Args:
         tickers (list): Lista de códigos de ativos para os quais os dados devem ser buscados.
         uri (string): URI de acesso à API de dados de ativos.
         apiKey (string): Chave de acesso à API de dados de ativos.
-    
+
     Retorna:
         str: Carga útil em formato JSON para ser enviada para o Kafka.
-    """    
+    """
     for ticker in tickers:
         prices_data = get_daily_time_series(ticker, uri, apiKey)
         build_repository(ticker, prices_data)
-      
-  
+
+
 def create_final_payload(tickers):
     """Cria a carga útil final para ser enviada para o Kafka.
-    
+
     Args:
         tickers (list): Lista de códigos de ativos para os quais os dados devem ser buscados.
-    
+
     Retorna:
         str: Carga útil em formato JSON para ser enviada para o Kafka.
     """
     stocks_data = []
-    
+
     for ticker in tickers:
         prices_data = pop_repository(ticker)
         stock_data = {
@@ -143,56 +146,74 @@ def create_final_payload(tickers):
             "price_data": prices_data
         }
         stocks_data.append(stock_data)
-    
+
     final_payload = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "stocks": stocks_data
     }
-    
+
     return json.dumps(final_payload)
 
-   
+
 def start_streaming(tickers, config):
     """Inicia o fluxo contínuo de dados para o Kafka.
-    
+
     Args:
         tickers (list): Lista de códigos de ativos para os quais os dados devem ser buscados.
         configs (dict): Dicionário de configurações de acesso API e KAFKA
     """
     def delivery_report(err, msg):
         """Callback para indicar o resultado da entrega da mensagem ao Kafka.
-        
+
         Args:
             err (Error): Erro ocorrido durante a entrega, se houver.
             msg (Message): Mensagem que foi entregue ou falhou.
         """
         if err is not None:
-            print(f'Message delivery failed: {err}')
+            mon.incr("delivery_failures")
+            mon.error(f"Falha na entrega da mensagem ao Kafka: {err}")
         else:
-            print(f'Message delivered to {msg.topic()} [{msg.partition()}]')
-            
+            mon.incr("messages_delivered")
+            mon.set(last_delivered_at=time.time())
+
     producer = Producer(config['KAFKA_BOOTSTRAP_SERVERS'])
-    
+
     # Se banco de dados não existe realiza sequência de requests na API e monta banco de dados
     if os.path.exists("./" + db_file) == False:
+        mon.state("starting", "Base local ausente: buscando dados na API de ativos")
         uri = config["API"]["URL"] + config["API"]["URN"]
-        create_database(tickers, uri, os.environ.get("API_TOKEN", config["API"]["TOKEN"]))        
-        
+        create_database(tickers, uri, os.environ.get("API_TOKEN", config["API"]["TOKEN"]))
+
+    interval = config["TIME_SLEEP"]
+    mon.set(tickers=len(tickers), window=WINDOW, send_interval_s=interval)
+
     # Enquanto houver dados no banco insere tópicos no Kafka
-    while has_data_repository():
-        payload = create_final_payload(tickers)   
-        print("payload", payload)
-        
+    remaining = remaining_messages(tickers)
+    while remaining > 0:
+        payload = create_final_payload(tickers)
+
         producer.produce(config['KAFKA_TOPIC'], key=None, value=payload, callback=delivery_report)
-        
-        time.sleep(config["TIME_SLEEP"])
-        
-        
+        # Aguarda a confirmação de entrega (dispara delivery_report)
+        if producer.flush(30) > 0:
+            mon.incr("delivery_failures")
+            mon.error("Kafka não confirmou a entrega da mensagem em 30s")
+
+        remaining = remaining_messages(tickers)
+        mon.set(messages_remaining=remaining, eta_hours=round(remaining * interval / 3600, 1))
+        mon.state("running", f"Enviando {len(tickers)} ativos a cada {interval}s para '{config['KAFKA_TOPIC']}'")
+        mon.info(f"Mensagem enviada ({len(payload) // 1024} KB); restam {remaining} mensagens")
+
+        time.sleep(interval)
+
+    mon.state("idle", "Dados históricos esgotados. Recrie o contêiner para reiniciar a simulação.")
+    mon.warn("Dados históricos esgotados; nenhuma nova mensagem será enviada")
+
+
 # Inicio do processo
 if __name__=="__main__":
-    
+
     print("starting producer")
-    
+
     with open('producer_config.json', 'r') as file:
         config = json.load(file)
 
@@ -206,9 +227,20 @@ if __name__=="__main__":
         }
     else:
         print("not is debug")
-        
+
     with open('tickers.json', 'r') as file:
         data = json.load(file)
         tickers = data['tickers']
-    
-    start_streaming(tickers, config)
+
+    while True:
+        try:
+            start_streaming(tickers, config)
+            break
+        except Exception as e:
+            mon.state("error", str(e))
+            mon.error(f"Falha no envio de dados, nova tentativa em 60s: {e}")
+            time.sleep(60)
+
+    # Mantém o processo ativo para continuar reportando o estado ao painel
+    while True:
+        time.sleep(3600)

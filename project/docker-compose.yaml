@@ -1,35 +1,42 @@
 # RealStockInsight - infraestrutura local completa
 #
-# Uso:
-#   docker compose build          # constrói todas as imagens
-#   docker compose up -d          # sobe os contêineres (constrói se necessário)
-#   docker compose up -d --build  # força reconstrução e sobe
+# Início rápido:
+#   cp .env.example .env          # defina DB_PASSWORD (obrigatória) e, se quiser, CERT_HOST
+#   docker compose up -d --build  # constrói as imagens e sobe tudo
+#   abra https://localhost:8298/  # painel de monitoramento (certificado autoassinado)
+#
+# Outros comandos:
+#   docker compose ps             # estado e healthcheck de cada contêiner
+#   docker compose logs -f <svc>  # logs de um serviço (ex.: producer, consumer-net, investor-bots)
 #   docker compose down           # remove os contêineres e a rede
+#
+# Apenas a porta 8298 (HTTPS) é exposta para fora da máquina. As demais portas publicadas
+# ficam restritas a 127.0.0.1, para depuração local.
 #
 # Nome do projeto: defina via -p, ex.: docker compose -p realstockinsight up -d
 
 services:
 # Zookeeper
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.6.1
     container_name: rsi-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - 22181:2181
+      - "127.0.0.1:22181:2181"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/2181'"]
       interval: 5s
       timeout: 5s
       retries: 20
     networks:
       - kafka
 
-# Kafka
+# Kafka (7.x: última linha com suporte a Zookeeper)
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.6.1
     container_name: rsi-kafka
     environment:
       KAFKA_BROKER_ID: 1
@@ -39,14 +46,15 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
-      - 29092:29092
+      - "127.0.0.1:29092:29092"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1"]
-      interval: 10s
-      timeout: 10s
+      # Teste TCP leve: ferramentas de linha de comando do Kafka iniciam uma JVM e podem exceder o timeout
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9092'"]
+      interval: 5s
+      timeout: 5s
       retries: 30
-      start_period: 20s
+      start_period: 15s
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -55,7 +63,7 @@ services:
 
 # Kafka-UI
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     container_name: rsi-kafka-ui
     hostname: kafka-ui
     environment:
@@ -65,9 +73,11 @@ services:
       PUBLIC_URL: /kafka-ui
       SERVER_SERVLET_CONTEXT_PATH: /kafka-ui
     ports:
-      - 8080:8080
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     networks:
       - kafka
       - proxy
@@ -80,7 +90,7 @@ services:
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no arquivo .env}
     ports:
-      - "127.0.0.1:5432:5432"   # apenas local; nao exposto externamente
+      - "127.0.0.1:5432:5432"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U userDb -d database"]
@@ -90,7 +100,7 @@ services:
     networks:
       - db
 
-# Web API utilizada pela UI para visualização de grafos
+# Web API utilizada pela UI (grafos, tendências e monitoramento)
   api:
     build: ./webapi
     image: rsi-api:latest
@@ -98,8 +108,14 @@ services:
     environment:
       DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no arquivo .env}
     ports:
-      - "5002:5002"
+      - "127.0.0.1:5002:5002"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5002/health > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy
@@ -107,19 +123,19 @@ services:
         condition: service_healthy
     networks:
       - db
+      - kafka         # apenas para o painel verificar a disponibilidade do Kafka
       - proxy
       - internal
 
-# Web UI para visualização de grafos
+# Web UI: painel de monitoramento e visualização de grafos
   ui:
     build: ./graph-view
     image: rsi-ui:latest
     container_name: rsi-ui
     hostname: ui
-    environment:
-      PUBLIC_URL: /graph-view
     ports:
-      - "5003:80"
+      - "127.0.0.1:5003:80"
+    restart: unless-stopped
     depends_on:
       - api
     networks:
@@ -141,6 +157,7 @@ services:
     networks:
       - kafka
       - db
+      - internal      # envio de status ao painel (api)
 
 # Consumer que atualiza tendências
   consumer-trend:
@@ -158,6 +175,7 @@ services:
     networks:
       - kafka
       - db
+      - internal      # envio de status ao painel (api)
 
 # Producer que insere valores dos ativos
   producer:
@@ -181,13 +199,16 @@ services:
     container_name: rsi-investor-bot
     restart: unless-stopped
     depends_on:
-      - api
-      - consumer-net
-      - consumer-trend
+      api:
+        condition: service_healthy
+      consumer-net:
+        condition: service_started
+      consumer-trend:
+        condition: service_started
     networks:
       - internal
 
-# Proxy reverso
+# Proxy reverso: único ponto de acesso externo (HTTPS)
   nginx-proxy:
     build:
       context: ./reverse-proxy
@@ -197,6 +218,7 @@ services:
     container_name: rsi-nginx-proxy
     ports:
       - "8298:7061"
+    restart: unless-stopped
     depends_on:
       - api
       - ui

@@ -1,83 +1,43 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Graph from './components/Graph';
-import GraphControlPanel from './components/GraphControlPanel';
-import * as d3 from 'd3';
+import React, { useState, useEffect } from 'react';
+import Monitor from './components/Monitor';
+import NetworkView from './components/NetworkView';
+import { KAFKA_UI_URL } from './config';
+import './App.css';
+
+const TABS = [
+  { id: 'monitor', label: 'Monitor' },
+  { id: 'network', label: 'Network' },
+];
+
+// Aba atual a partir do hash da URL (#/monitor, #/network)
+const tabFromHash = () => {
+  const id = window.location.hash.replace('#/', '');
+  return TABS.some(t => t.id === id) ? id : 'monitor';
+};
 
 const App = () => {
-  const [nodes, setNodes] = useState([]);
-  const [links, setLinks] = useState([]);
-  const [visualParams, setVisualParams] = useState({
-    nodeSize: 4,
-    linkDistance: 200,
-    chargeStrength: -10,
-    collisionRadius: 50,
-    weightThreshold: 2,
-    centerForce: 0,
-  });
-  const width = 800;
-  const height = 500;
-  useEffect(() => {
-    // URI ambiente de produção
-    const primaryApiUrl = 'https://andromeda.lasdpc.icmc.usp.br:8298/api-go/graph'; 
-    // URI ambiente de desenvolvimento
-    const fallbackApiUrl = 'http://localhost:5002/graph';
-  
-    const fetchData = (url) => {
-      fetch(url)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.statusText);
-          }
-          return response.json();
-        })
-        .then(graph => {
-          console.log('Data from API: ', graph); // Verifica os dados brutos
-          const processedNodes = graph.nodes.map(node => ({
-            id: node.id,
-            label: node.label
-          }));
-  
-          const processedLinks = graph.links.map(link => ({
-            source: link.source,
-            target: link.target,
-            weight: link.weight
-          }));
-  
-          console.log('Processed nodes: ', processedNodes); // Verifica os nós processados
-          console.log('Processed links: ', processedLinks); // Verifica os links processados
-  
-          setNodes(processedNodes);
-          setLinks(processedLinks);
-  
-          const maxLinkWeight = d3.max(processedLinks, link => link.weight);
-          setVisualParams(prevParams => ({ ...prevParams, maxLinkWeight }));
-        })
-        .catch(error => {
-          console.error('Erro ao buscar dados da API principal:', error);
-          console.log('Tentando a URL alternativa.');
-          fetchData(fallbackApiUrl);
-        });
-    };
-  
-    // Inicia com a URL da API primária
-    fetchData(primaryApiUrl);
-  }, []);
-  
+  const [tab, setTab] = useState(tabFromHash);
 
-  const handleParamChange = useCallback((paramName, paramValue) => {
-    setVisualParams(prevParams => ({
-      ...prevParams,
-      [paramName]: paramValue,
-    }));
+  useEffect(() => {
+    const onHashChange = () => setTab(tabFromHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
-  
+
   return (
-    <div className="graph-container">
-      <h1>Network Graph</h1>
-      <div>
-      <Graph nodes={nodes} links={links} width={width} height={height} visualParams={visualParams} />
-      <GraphControlPanel onParamChange={handleParamChange} visualParams={visualParams} maxWeight={visualParams.maxLinkWeight} />
-      </div>
+    <div className="app">
+      <header className="app-header">
+        <span className="app-brand">RealStockInsight</span>
+        <nav className="app-nav">
+          {TABS.map(t => (
+            <a key={t.id} href={`#/${t.id}`} className={tab === t.id ? 'active' : ''}>{t.label}</a>
+          ))}
+          <a href={KAFKA_UI_URL} target="_blank" rel="noreferrer">Kafka UI ↗</a>
+        </nav>
+      </header>
+      <main>
+        {tab === 'network' ? <NetworkView /> : <Monitor />}
+      </main>
     </div>
   );
 };

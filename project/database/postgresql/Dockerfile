@@ -1,4 +1,4 @@
-FROM postgres:latest
+FROM postgres:18.6
 
 # Define as variáveis de ambiente para o banco de dados e usuário
 ENV POSTGRES_DB=database

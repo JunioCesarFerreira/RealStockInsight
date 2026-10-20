@@ -17,7 +17,51 @@ The simulation analysis is performed on the bot interaction data stored in the d
 2. **Consumer (kafka-services/consumer-network.py):** Consumes data from the Kafka topic, processes it to construct a co-movement network, and stores this network in the database.
 2. **Consumer (kafka-services/consumer-trend.py):** Consumes data from the Kafka topic, processes it to construct a trends table, and stores it in the database.
 3. **WebAPI (webapi/main.go):** A Go-based API that provides endpoints to access the co-movement network data stored in the database.
-4. **Graph-View (graph-view):** A React-based user interface that visualizes the co-movement network interactively, communicating with the WebAPI to fetch necessary data.
+4. **Graph-View (graph-view):** A React-based user interface that visualizes the co-movement network interactively, communicating with the WebAPI to fetch necessary data. It also hosts the monitoring dashboard for the whole pipeline.
+
+## Quick Start (Docker)
+
+Prerequisite: Docker with Docker Compose v2.
+
+```bash
+cd project
+cp .env.example .env          # set DB_PASSWORD (required)
+docker compose up -d --build
+```
+
+Open **https://localhost:8298/** (or `https://<machine-ip>:8298/` from another computer). The certificate is self-signed, so accept the browser warning. To issue the certificate for the right name, set `CERT_HOST` in `.env` before building.
+
+The first build takes a few minutes. After that, everything can be followed on the dashboard: within about a minute the producer sends its first message, the consumers build the network and the trends, and the bots start trading about 60s after the API is ready.
+
+### Monitoring Dashboard
+
+The home page shows the state of the whole system, refreshed every 5s:
+
+- **Pipeline**: producer → Kafka → consumers → PostgreSQL → API → bots, with the status of each step. When a step fails, the following ones usually wait for it; fix the leftmost one first.
+- **Services**: state and metrics of the producer and of each consumer (messages sent and consumed, Kafka backlog, networks built, processing time, etc.).
+- **Infrastructure & data**: connectivity to PostgreSQL, Kafka and Kafka UI; count and age of the stored networks and trends.
+- **Investor bots**: strategy, cycles run and decisions (buy, sell, hold) of each bot.
+- **Event log**: recent events from every service, filterable by service and level.
+
+| Status | Meaning |
+|---|---|
+| OK | Running and reporting normally |
+| Attention | Starting, waiting for upstream data, or heartbeats are late |
+| Error | The last operation failed (details in the event log) |
+| Down | No heartbeat for a while: the container is probably stopped or restarting |
+
+Other addresses behind the same proxy: the network view at `/graph-view/#/network`, Kafka UI at `/kafka-ui/` and the API at `/api/`.
+
+For command-line diagnostics:
+
+```bash
+docker compose ps                  # state and healthcheck of each container
+docker compose logs -f producer    # or consumer-net, consumer-trend, investor-bots, api
+```
+
+**How it works:** each Python service uses the `monitor.py` module to send heartbeats (every 10 to 15s) and events to the WebAPI (`POST /monitor/heartbeat` and `POST /monitor/event`). The WebAPI stores them in PostgreSQL (tables `SERVICE_STATUS` and `SERVICE_EVENTS`) and serves them at `GET /monitor/status` and `GET /monitor/events`. The reverse proxy only allows reads on these endpoints from outside Docker.
+
+**Simulation length:** the producer's historical data (`database.db`) yields about 6,700 messages, one every 60s (roughly 4.7 days). Once exhausted, the producer stays in the `idle` state. To restart the simulation: `docker compose up -d --force-recreate producer`.
 
 ## How to Run the Project in Debug Mode
 
@@ -53,13 +97,18 @@ The simulation analysis is performed on the bot interaction data stored in the d
 
    **Note:** Ensure all services are running and properly configured to communicate with each other. The system should be initialized in the following order: Cassandra -> Kafka Services -> WebAPI -> React Front-End to ensure all services are available when needed.
 
+   **Environment variables in debug mode:**
+   - `DB_PASSWORD`: PostgreSQL password, used by the WebAPI and the consumers.
+   - `MONITOR_API_URL=http://localhost:5002`: lets the Python services report to the dashboard (the default `http://api:5002` only resolves inside Docker). Set `MONITOR_DISABLED=1` to turn reporting off.
+   - `REACT_APP_API_BASE=http://localhost:5002`: WebAPI URL used by the UI under `npm start`.
+
 ### Local Docker Environment
 
 The entire stack is described in a single [`docker-compose.yaml`](./docker-compose.yaml) that builds every image directly from its source. No separate build scripts are needed.
 
 1. **Building the Images**
 
-   From the `project` directory, build all images with:
+   From the `project` directory, create the `.env` file from [`.env.example`](./.env.example) (`DB_PASSWORD` is required) and build all images with:
 
 ```bash
    docker compose build

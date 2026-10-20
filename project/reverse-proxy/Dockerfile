@@ -1,4 +1,4 @@
-FROM nginx:latest
+FROM nginx:1.31.7
 
 # Instala o Netcat e o OpenSSL
 RUN apt-get update && \

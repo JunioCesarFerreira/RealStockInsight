@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 	"main.go/configs"
 	"main.go/pkg/graph"
+	"main.go/pkg/monitor"
 	"main.go/pkg/trend"
 )
 
@@ -30,15 +32,30 @@ func init() {
 	if err = db.Ping(); err != nil {
 		log.Fatal(err)
 	}
+	if err = monitor.EnsureSchema(db); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Rotina principal
 func main() {
 	port := ":5002"
+	mon := &monitor.Handler{
+		DB: db,
+		Probes: []monitor.Probe{
+			{Name: "kafka", Addr: configs.KafkaAddr},
+			{Name: "kafka-ui", Addr: configs.KafkaUIAddr},
+		},
+	}
 	http.HandleFunc("/graph", graphHandler)
 	http.HandleFunc("/trend", trendHandler)
 	http.HandleFunc("/stocks/sell", sellHandler)
 	http.HandleFunc("/stocks/buy", buyHandler)
+	http.HandleFunc("/health", withCors(mon.Health))
+	http.HandleFunc("/monitor/heartbeat", withCors(mon.Heartbeat))
+	http.HandleFunc("/monitor/event", withCors(mon.Event))
+	http.HandleFunc("/monitor/status", withCors(mon.Status))
+	http.HandleFunc("/monitor/events", withCors(mon.Events))
 	fmt.Println("Server listening on " + port)
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatal(err)
@@ -58,10 +75,18 @@ func graphHandler(w http.ResponseWriter, r *http.Request) {
 
 	query := "SELECT graph_json FROM COMPLEX_NETWORK_GRAPHS ORDER BY id DESC LIMIT 1"
 
-	if err := db.QueryRow(query).Scan(&jsonData); err != nil {
-		errorLog(err)
+	err := db.QueryRow(query).Scan(&jsonData)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Nenhuma rede gerada ainda: retorna grafo vazio
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(graph.Graph{Nodes: []*graph.Node{}, Links: []*graph.Link{}})
+		return
 	}
-	log.Println("JsonData: ", jsonData)
+	if err != nil {
+		errorLog(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// Decode JSON data into a Graph struct
 	var graphData graph.Graph
@@ -140,6 +165,17 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 func errorLog(err error) {
 	log.Println("Error!")
 	log.Println(err.Error())
+}
+
+// Envolve um handler habilitando CORs e respondendo ao preflight
+func withCors(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		if r.Method == "OPTIONS" {
+			return
+		}
+		h(w, r)
+	}
 }
 
 // Habilita CORs
