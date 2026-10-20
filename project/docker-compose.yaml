@@ -77,8 +77,10 @@ services:
     build: ./database/postgresql
     image: rsi-db:latest
     container_name: rsi-db
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no arquivo .env}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"   # apenas local; nao exposto externamente
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U userDb -d database"]
@@ -93,6 +95,8 @@ services:
     build: ./webapi
     image: rsi-api:latest
     container_name: rsi-api
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no arquivo .env}
     ports:
       - "5002:5002"
     restart: unless-stopped
@@ -126,6 +130,8 @@ services:
     build: ./kafka-services/consumer-network
     image: rsi-consumer-network:latest
     container_name: rsi-consumer-network
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no arquivo .env}
     restart: unless-stopped
     depends_on:
       db:
@@ -141,6 +147,8 @@ services:
     build: ./kafka-services/consumer-trend
     image: rsi-consumer-trend:latest
     container_name: rsi-consumer-trend
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no arquivo .env}
     restart: unless-stopped
     depends_on:
       db:
@@ -156,6 +164,8 @@ services:
     build: ./kafka-services/producer
     image: rsi-producer:latest
     container_name: rsi-producer
+    environment:
+      API_TOKEN: ${API_TOKEN:-}   # chave da API de ativos (nao versionar)
     restart: unless-stopped
     depends_on:
       kafka:
@@ -179,7 +189,10 @@ services:
 
 # Proxy reverso
   nginx-proxy:
-    build: ./reverse-proxy
+    build:
+      context: ./reverse-proxy
+      args:
+        CERT_HOST: ${CERT_HOST:-localhost}   # hostname/IP do certificado autoassinado
     image: rsi-nginx-proxy:latest
     container_name: rsi-nginx-proxy
     ports:

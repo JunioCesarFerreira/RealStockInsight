@@ -1,4 +1,5 @@
 import json
+import os
 import psycopg2
 import sqlite3
 
@@ -7,7 +8,7 @@ conn_postgres = psycopg2.connect(
     port="5432",
     database="database",
     user="userDb",
-    password="password1234",
+    password=os.environ["DB_PASSWORD"],
 )
 conn_sqlite = sqlite3.connect("bot_log.db")
 

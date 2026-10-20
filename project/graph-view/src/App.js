@@ -18,7 +18,7 @@ const App = () => {
   const height = 500;
   useEffect(() => {
     // URI ambiente de produção
-    const primaryApiUrl = 'http://andromeda.lasdpc.icmc.usp.br:8298/api-go/graph'; 
+    const primaryApiUrl = 'https://andromeda.lasdpc.icmc.usp.br:8298/api-go/graph'; 
     // URI ambiente de desenvolvimento
     const fallbackApiUrl = 'http://localhost:5002/graph';
   

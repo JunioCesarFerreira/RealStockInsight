@@ -1,4 +1,5 @@
 import json
+import os
 import psycopg2
 from confluent_kafka import Consumer, KafkaException
     
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     conn = psycopg2.connect(
         dbname=db_conf["dbname"],
         user=db_conf["user"],
-        password=db_conf["password"],
+        password=os.environ["DB_PASSWORD"],
         host=db_conf["host"],
         port=db_conf["port"]
     )

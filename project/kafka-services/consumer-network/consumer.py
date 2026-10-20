@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import pandas as pd
 import networkx as nx
@@ -33,7 +34,7 @@ db_conf = conf["database"]
 conn = psycopg2.connect(
     dbname=db_conf["dbname"],
     user=db_conf["user"],
-    password=db_conf["password"],
+    password=os.environ["DB_PASSWORD"],
     host=db_conf["host"],
     port=db_conf["port"]
 )

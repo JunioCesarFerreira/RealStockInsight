@@ -176,7 +176,7 @@ def start_streaming(tickers, config):
     # Se banco de dados não existe realiza sequência de requests na API e monta banco de dados
     if os.path.exists("./" + db_file) == False:
         uri = config["API"]["URL"] + config["API"]["URN"]
-        create_database(tickers, uri, config["API"]["TOKEN"])        
+        create_database(tickers, uri, os.environ.get("API_TOKEN", config["API"]["TOKEN"]))        
         
     # Enquanto houver dados no banco insere tópicos no Kafka
     while has_data_repository():
