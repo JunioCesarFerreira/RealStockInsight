@@ -50,7 +50,7 @@ const NetworkView = () => {
         setVisualParams(prevParams => ({ ...prevParams, maxLinkWeight }));
       })
       .catch(err => {
-        console.error('Erro ao buscar dados da API:', err);
+        console.error('Failed to fetch data from the API:', err);
         setError(err.message);
         setStatus('error');
       });

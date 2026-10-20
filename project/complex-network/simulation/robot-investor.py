@@ -87,7 +87,7 @@ def request_graph():
 
     # Verifica se a resposta da API está em um formato adequado
     if not isinstance(data, dict) or "nodes" not in data or "links" not in data:
-        raise ValueError("Resposta da API de grafo inválida")
+        raise ValueError("Invalid response from the graph API")
 
     G = nx.Graph()
 
@@ -224,7 +224,7 @@ def run_robot(bot, parameters, G, trends, market):
             assets_txt = json.dumps(holdings)
             insert_log_repository(bot.name, bot.id, ticker, metric_value, action, cash, assets_txt)
         else:
-            raise ValueError(f"Nenhuma métrica foi selecionada para o bot {bot.name}")
+            raise ValueError(f"No metric is enabled for bot {bot.name}")
 
     return decisions, execution
 
@@ -253,7 +253,7 @@ def investment_strategy(p, t, trend=None):
 def describe_strategy(parameters):
     """Descrição curta das métricas habilitadas e seus limites."""
     enabled = [f"{name} > {p['threshold']}" for name, p in parameters.items() if p["enable"]]
-    return ", ".join(enabled) if enabled else "nenhuma métrica"
+    return ", ".join(enabled) if enabled else "no metric"
 
 
 def thread_run_robot(robot, queue, mon):
@@ -275,18 +275,18 @@ def thread_run_robot(robot, queue, mon):
         try:
             G = request_graph()  # Solicita o grafo da API
             if G.number_of_nodes() == 0:
-                mon.state("waiting", "Aguardando a primeira rede de co-movimento (consumer-network)")
+                mon.state("waiting", "Waiting for the first co-movement network (consumer-network)")
             else:
                 trends = request_trend() # Solicita tendências da API
                 if not trends:
-                    mon.state("waiting", "Aguardando tendências (consumer-trend)")
+                    mon.state("waiting", "Waiting for trends (consumer-trend)")
                 else:
                     if not account_opened:
                         # Abre a conta (ou retoma a existente, após reinício do bot)
                         account = market.open_account(bot.id, bot.initial_money, bot.initial_assets)
                         account_opened = True
-                        mon.info(f"Conta no mercado: caixa US$ {float(account['cash']):,.2f}, "
-                                 f"patrimônio US$ {float(account['net_worth']):,.2f}")
+                        mon.info(f"Market account: cash US$ {float(account['cash']):,.2f}, "
+                                 f"net worth US$ {float(account['net_worth']):,.2f}")
 
                     decisions, execution = run_robot(bot, robot["parameters"][0], G, trends, market)
                     account = market.account(bot.id)
@@ -300,20 +300,20 @@ def thread_run_robot(robot, queue, mon):
                             last_rejected=execution["rejected"],
                             cash=float(account["cash"]), net_worth=float(account["net_worth"]),
                             result_pct=account["result_pct"])
-                    mon.state("running", f"Avaliando {G.number_of_nodes()} ativos a cada {robot['interval']}s")
-                    mon.info(f"Ciclo {cycles}: decisões {decisions['buy']} compra, {decisions['sell']} venda, "
-                             f"{decisions['hold']} manter" +
-                             (f", {decisions['skipped']} sem tendência" if decisions["skipped"] else "") +
-                             f"; executadas {execution['buy']} compras e {execution['sell']} vendas "
+                    mon.state("running", f"Evaluating {G.number_of_nodes()} tickers every {robot['interval']}s")
+                    mon.info(f"Cycle {cycles}: decisions {decisions['buy']} buy, {decisions['sell']} sell, "
+                             f"{decisions['hold']} hold" +
+                             (f", {decisions['skipped']} without trend" if decisions["skipped"] else "") +
+                             f"; executed {execution['buy']} buys and {execution['sell']} sells "
                              f"(US$ {execution['volume']:,.2f})" +
-                             (f", {execution['rejected']} recusadas" if execution["rejected"] else "") +
-                             f"; patrimônio US$ {float(account['net_worth']):,.2f} ({account['result_pct']:+.2f}%)")
+                             (f", {execution['rejected']} rejected" if execution["rejected"] else "") +
+                             f"; net worth US$ {float(account['net_worth']):,.2f} ({account['result_pct']:+.2f}%)")
         except MarketNotReady as e:
-            mon.state("waiting", f"Mercado ainda sem preços: {e}")
+            mon.state("waiting", f"Market has no prices yet: {e}")
         except Exception as e:
             mon.incr("errors")
             mon.state("error", str(e))
-            mon.error(f"Falha no ciclo do bot: {e}")
+            mon.error(f"Bot cycle failed: {e}")
 
         time.sleep(robot["interval"])
 
@@ -341,7 +341,7 @@ if __name__=="__main__":
                 API_TREND_ENDPOINT = apiEndpoints["trend"]
                 API_MARKET_URL = apiEndpoints["market"]
     except Exception as e:
-        print(f"Falha ao ler configurações: {e}")
+        print(f"Failed to read configuration: {e}")
         exit(1)
 
     # Um monitor por bot, para que cada um apareça no painel
@@ -356,7 +356,7 @@ if __name__=="__main__":
     print("waiting...")
     if is_debug == False:
         for mon in monitors.values():
-            mon.state("starting", "Aguardando 60s para os demais serviços iniciarem")
+            mon.state("starting", "Waiting 60s for the other services to start")
         time.sleep(60) # Espera um minuto para garantir que outras partes já estejam em execução.
 
     # Inicializa a fila e as threads

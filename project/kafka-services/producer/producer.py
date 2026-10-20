@@ -171,7 +171,7 @@ def start_streaming(tickers, config):
         """
         if err is not None:
             mon.incr("delivery_failures")
-            mon.error(f"Falha na entrega da mensagem ao Kafka: {err}")
+            mon.error(f"Kafka message delivery failed: {err}")
         else:
             mon.incr("messages_delivered")
             mon.set(last_delivered_at=time.time())
@@ -180,7 +180,7 @@ def start_streaming(tickers, config):
 
     # Se banco de dados não existe realiza sequência de requests na API e monta banco de dados
     if os.path.exists("./" + db_file) == False:
-        mon.state("starting", "Base local ausente: buscando dados na API de ativos")
+        mon.state("starting", "Local database missing: fetching data from the stock data API")
         uri = config["API"]["URL"] + config["API"]["URN"]
         create_database(tickers, uri, os.environ.get("API_TOKEN", config["API"]["TOKEN"]))
 
@@ -196,17 +196,17 @@ def start_streaming(tickers, config):
         # Aguarda a confirmação de entrega (dispara delivery_report)
         if producer.flush(30) > 0:
             mon.incr("delivery_failures")
-            mon.error("Kafka não confirmou a entrega da mensagem em 30s")
+            mon.error("Kafka did not acknowledge the message within 30s")
 
         remaining = remaining_messages(tickers)
         mon.set(messages_remaining=remaining, eta_hours=round(remaining * interval / 3600, 1))
-        mon.state("running", f"Enviando {len(tickers)} ativos a cada {interval}s para '{config['KAFKA_TOPIC']}'")
-        mon.info(f"Mensagem enviada ({len(payload) // 1024} KB); restam {remaining} mensagens")
+        mon.state("running", f"Sending {len(tickers)} tickers every {interval}s to '{config['KAFKA_TOPIC']}'")
+        mon.info(f"Message sent ({len(payload) // 1024} KB); {remaining} messages remaining")
 
         time.sleep(interval)
 
-    mon.state("idle", "Dados históricos esgotados. Recrie o contêiner para reiniciar a simulação.")
-    mon.warn("Dados históricos esgotados; nenhuma nova mensagem será enviada")
+    mon.state("idle", "Historical data exhausted. Recreate the container to restart the simulation.")
+    mon.warn("Historical data exhausted; no new messages will be sent")
 
 
 # Inicio do processo
@@ -238,7 +238,7 @@ if __name__=="__main__":
             break
         except Exception as e:
             mon.state("error", str(e))
-            mon.error(f"Falha no envio de dados, nova tentativa em 60s: {e}")
+            mon.error(f"Failed to send data, retrying in 60s: {e}")
             time.sleep(60)
 
     # Mantém o processo ativo para continuar reportando o estado ao painel

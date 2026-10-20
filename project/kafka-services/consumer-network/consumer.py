@@ -44,8 +44,8 @@ def connect_db(db_conf):
                 port=db_conf["port"]
             )
         except psycopg2.OperationalError as e:
-            mon.state("waiting", "Aguardando o PostgreSQL")
-            mon.warn(f"Banco indisponível, nova tentativa em 5s: {e}")
+            mon.state("waiting", "Waiting for PostgreSQL")
+            mon.warn(f"Database unavailable, retrying in 5s: {e}")
             time.sleep(5)
 
 # Conectando ao PostgreSQL
@@ -90,7 +90,7 @@ def process_message(msg):
             data_frames['closing_prices'].at[stock["time"], ticker] = stock['close']
             data_frames['volumes'].at[stock["time"], ticker] = stock['volume']
 
-mon.state("waiting", "Aguardando mensagens no tópico 'stock-prices'")
+mon.state("waiting", "Waiting for messages on topic 'stock-prices'")
 last_lag_check = 0
 try:
     while True:
@@ -106,9 +106,9 @@ try:
             if msg.error().code() == KafkaError._PARTITION_EOF:
                 continue
             elif msg.error().code() == KafkaError.UNKNOWN_TOPIC_OR_PART:
-                mon.state("waiting", "Tópico 'stock-prices' ainda não existe: aguardando o producer")
+                mon.state("waiting", "Topic 'stock-prices' does not exist yet: waiting for the producer")
             else:
-                mon.error(f"Erro do Kafka: {msg.error()}")
+                mon.error(f"Kafka error: {msg.error()}")
         else:
             start_time = time.time() # Inicio do processamento
             mon.incr("messages_consumed")
@@ -138,12 +138,12 @@ try:
                     mon.incr("graphs_written")
                     mon.set(last_graph_at=time.time(), nodes=len(G.nodes), links=len(G.edges),
                             last_runtime_s=runtime, history_rows=len(data_frames['closing_prices']))
-                    mon.state("running", "Construindo a rede de co-movimento a cada mensagem")
-                    mon.info(f"Rede atualizada: {len(G.nodes)} nós, {len(G.edges)} arestas ({runtime}s)")
+                    mon.state("running", "Building the co-movement network on every message")
+                    mon.info(f"Network updated: {len(G.nodes)} nodes, {len(G.edges)} edges ({runtime}s)")
             except Exception as e:
                 mon.incr("processing_errors")
                 mon.state("error", str(e))
-                mon.error(f"Falha ao processar mensagem: {e}")
+                mon.error(f"Failed to process message: {e}")
                 if conn.closed:
                     raise
                 conn.rollback()

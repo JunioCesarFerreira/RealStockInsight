@@ -104,7 +104,7 @@ for row in traders_table:
         print(f"{trader_id} : {net_worth} | {resource} | {a - b}")
         #print(f"Patrimônio líquido: {final_traders[trader_id]}")
     else:
-        print("Nenhuma transação encontrada")
+        print("No transaction found")
 
 conn_postgres.close()
 conn_sqlite.close()

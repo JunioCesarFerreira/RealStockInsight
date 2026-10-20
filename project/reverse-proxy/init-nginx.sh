@@ -5,23 +5,23 @@ KAFKA_UI_PORT=8080
 MAX_WAIT=120
 SECONDS=0
 
-echo "Aguardando o Kafka estar pronto para conexões..."
+echo "Waiting for Kafka UI to accept connections..."
 
 while true; do
     # Apenas para acompanhamento no log
     echo $(nc -zv ${KAFKA_UI_NET} ${KAFKA_UI_PORT})
     # Tenta estabelecer uma conexão silenciosa com o Kafka UI
     if nc -z ${KAFKA_UI_NET} ${KAFKA_UI_PORT} >/dev/null 2>&1; then
-        echo "O Kafka está pronto para conexões!"
+        echo "Kafka UI is accepting connections."
         break
     fi
     if [ $SECONDS -ge $MAX_WAIT ]; then
-        echo "Atingiu o tempo máximo de espera para o Kafka estar pronto."
+        echo "Timed out waiting for Kafka UI."
         exit 1
     fi
     sleep 5
     SECONDS=$((SECONDS+5))
 done
 
-echo "Iniciando o NGINX."
+echo "Starting NGINX."
 nginx -g 'daemon off;'

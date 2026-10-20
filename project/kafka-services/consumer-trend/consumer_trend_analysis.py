@@ -59,8 +59,8 @@ def connect_db(db_conf):
                 port=db_conf["port"]
             )
         except psycopg2.OperationalError as e:
-            mon.state("waiting", "Aguardando o PostgreSQL")
-            mon.warn(f"Banco indisponível, nova tentativa em 5s: {e}")
+            mon.state("waiting", "Waiting for PostgreSQL")
+            mon.warn(f"Database unavailable, retrying in 5s: {e}")
             time.sleep(5)
 
 if __name__ == '__main__':
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     conn = connect_db(conf["database"])
     cursor = conn.cursor()
 
-    mon.state("waiting", "Aguardando mensagens no tópico 'stock-prices'")
+    mon.state("waiting", "Waiting for messages on topic 'stock-prices'")
     last_lag_check = 0
     try:
         while True:
@@ -96,9 +96,9 @@ if __name__ == '__main__':
                 if msg.error().code() == KafkaError._PARTITION_EOF:
                     continue
                 elif msg.error().code() == KafkaError.UNKNOWN_TOPIC_OR_PART:
-                    mon.state("waiting", "Tópico 'stock-prices' ainda não existe: aguardando o producer")
+                    mon.state("waiting", "Topic 'stock-prices' does not exist yet: waiting for the producer")
                 else:
-                    mon.error(f"Erro do Kafka: {msg.error()}")
+                    mon.error(f"Kafka error: {msg.error()}")
             else:
                 mon.incr("messages_consumed")
                 mon.set(last_message_at=time.time())
@@ -106,12 +106,12 @@ if __name__ == '__main__':
                     counts = process_message(msg)
                     mon.incr("trend_rows_written", counts['up'] + counts['down'])
                     mon.set(tickers_up=counts['up'], tickers_down=counts['down'])
-                    mon.state("running", "Calculando tendências por média móvel a cada mensagem")
-                    mon.info(f"Tendências atualizadas: {counts['up']} em alta, {counts['down']} em baixa")
+                    mon.state("running", "Computing moving-average trends on every message")
+                    mon.info(f"Trends updated: {counts['up']} up, {counts['down']} down")
                 except Exception as e:
                     mon.incr("processing_errors")
                     mon.state("error", str(e))
-                    mon.error(f"Falha ao processar mensagem: {e}")
+                    mon.error(f"Failed to process message: {e}")
                     if conn.closed:
                         raise
                     conn.rollback()
