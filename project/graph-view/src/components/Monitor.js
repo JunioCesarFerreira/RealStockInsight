@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { API_BASE } from '../config';
+import { duration, money, signClass, signedPct } from '../format';
 import './Monitor.css';
 
 const POLL_MS = 5000;
@@ -50,15 +51,6 @@ const worst = healths => healths.reduce((w, h) => (HEALTH_RANK[h] > HEALTH_RANK[
 
 const humanize = key => key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
 
-// Duração legível a partir de segundos
-const duration = seconds => {
-  const s = Math.max(0, Math.round(seconds));
-  if (s < 60) return `${s}s`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
-  return `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h`;
-};
-
 const Dot = ({ health }) => <span className={`dot dot-${health}`} aria-hidden="true" />;
 
 const HealthBadge = ({ health }) => (
@@ -70,6 +62,7 @@ const Monitor = () => {
   const [apiError, setApiError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [events, setEvents] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [eventFilter, setEventFilter] = useState({ service: '', level: '' });
   const [, setTick] = useState(0);
   // Diferença entre o relógio do navegador e o do servidor (ms)
@@ -91,15 +84,17 @@ const Monitor = () => {
       const params = new URLSearchParams({ limit: '100' });
       if (eventFilter.service) params.set('service', eventFilter.service);
       if (eventFilter.level) params.set('level', eventFilter.level);
-      const [statusRes, eventsRes] = await Promise.all([
+      const [statusRes, eventsRes, accountsRes] = await Promise.all([
         fetch(`${API_BASE}/monitor/status`),
         fetch(`${API_BASE}/monitor/events?${params}`),
+        fetch(`${API_BASE}/market/accounts`),
       ]);
       if (!statusRes.ok) throw new Error(`${statusRes.status} ${await statusRes.text()}`);
       const data = await statusRes.json();
       skew.current = Date.now() - Date.parse(data.generated_at);
       setStatus(data);
       if (eventsRes.ok) setEvents(await eventsRes.json());
+      if (accountsRes.ok) setAccounts(await accountsRes.json());
       setApiError(null);
       setLastUpdate(Date.now());
     } catch (err) {
@@ -275,18 +270,25 @@ const Monitor = () => {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Bot</th><th>Status</th><th>Strategy</th><th>Cycles</th><th>Last cycle</th>
-                  <th title="Decisions in the last cycle">Last decisions</th><th>Details</th>
+                  <th>Bot / strategy</th><th>Status</th><th>Cycles</th><th>Last cycle</th>
+                  <th title="Strategy decisions in the last cycle">Decisions</th>
+                  <th title="Orders executed by the market in the last cycle">Executed</th>
+                  <th className="num">Net worth</th>
+                  <th className="num" title="Change in net worth since the account was opened">Result</th>
+                  <th>Details</th>
                 </tr>
               </thead>
               <tbody>
                 {bots.map(b => {
                   const m = b.metrics || {};
+                  const account = accounts.find(a => a.trader_id === m.trader_id);
                   return (
                     <tr key={b.instance}>
-                      <td><strong>{b.instance}</strong></td>
+                      <td>
+                        <strong>{b.instance}</strong>
+                        <div className="cell-sub">{m.strategy || '—'}</div>
+                      </td>
                       <td><HealthBadge health={b.health} /></td>
-                      <td className="muted">{m.strategy || '—'}</td>
                       <td>{m.cycles ?? 0}</td>
                       <td className="nowrap">{m.last_cycle_at ? ago(m.last_cycle_at * 1000) : '—'}</td>
                       <td className="nowrap">
@@ -294,13 +296,26 @@ const Monitor = () => {
                           ? <><span className="up">▲ {m.last_buy}</span> <span className="down">▼ {m.last_sell}</span> <span className="muted">■ {m.last_hold}</span></>
                           : '—'}
                       </td>
+                      <td className="nowrap">
+                        {m.cycles
+                          ? <><span className="up">▲ {m.last_trades_buy ?? 0}</span> <span className="down">▼ {m.last_trades_sell ?? 0}</span>
+                              {m.last_rejected ? <span className="muted" title="Rejected by the market"> ✕ {m.last_rejected}</span> : null}</>
+                          : '—'}
+                      </td>
+                      <td className="nowrap num">{account ? money(account.net_worth) : '—'}</td>
+                      <td className={`nowrap num ${account ? signClass(account.result) : ''}`}>
+                        {account ? signedPct(account.result_pct) : '—'}
+                      </td>
                       <td className="muted">{b.state}{b.detail && ` — ${b.detail}`}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-            <p className="hint">▲ buy · ▼ sell · ■ hold</p>
+            <p className="hint">
+              ▲ buy · ▼ sell · ■ hold · ✕ rejected. Decisions come from the strategy; executed orders are the ones
+              settled by the market. Portfolios and the trade ledger are on the <a href="#/market">Market</a> tab.
+            </p>
           </div>
         )}
       </section>

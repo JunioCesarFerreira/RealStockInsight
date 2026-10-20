@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"main.go/pkg/httpjson"
 )
 
 // Quantidade máxima de eventos mantidos no banco
@@ -114,7 +116,7 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "database unavailable: "+err.Error(), http.StatusServiceUnavailable)
 		return
 	}
-	writeJSON(w, map[string]string{"status": "ok"})
+	httpjson.Write(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 // Heartbeat registra o estado atual de uma instância de serviço (POST)
@@ -124,7 +126,7 @@ func (h *Handler) Heartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var hb heartbeat
-	if err := decodeBody(w, r, &hb); err != nil {
+	if err := httpjson.Decode(w, r, &hb); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -163,7 +165,7 @@ func (h *Handler) Event(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var ev event
-	if err := decodeBody(w, r, &ev); err != nil {
+	if err := httpjson.Decode(w, r, &ev); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -206,7 +208,7 @@ func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, map[string]any{
+	httpjson.Write(w, http.StatusOK, map[string]any{
 		"generated_at": time.Now().UTC(),
 		"infra":        h.infra(),
 		"services":     services,
@@ -242,7 +244,7 @@ func (h *Handler) Events(w http.ResponseWriter, r *http.Request) {
 		}
 		events = append(events, ev)
 	}
-	writeJSON(w, events)
+	httpjson.Write(w, http.StatusOK, events)
 }
 
 func (h *Handler) services() ([]serviceStatus, error) {
@@ -349,19 +351,6 @@ func (h *Handler) data() (dataStatus, error) {
 		}
 	}
 	return d, nil
-}
-
-func decodeBody(w http.ResponseWriter, r *http.Request, v any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
-	return json.NewDecoder(r.Body).Decode(v)
-}
-
-func writeJSON(w http.ResponseWriter, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		log.Println("encode error:", err)
-	}
 }
 
 func limit(s string, n int) string {

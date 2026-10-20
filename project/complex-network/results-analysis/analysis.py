@@ -14,8 +14,8 @@ conn_sqlite = sqlite3.connect("bot_log.db")
 
 cursor_postgres = conn_postgres.cursor()
 
-# Pega lista de investidores
-cursor_postgres.execute("SELECT * FROM TRADERS")
+# Pega lista de investidores (exceto o pool de liquidez do mercado, contraparte das ordens)
+cursor_postgres.execute("SELECT * FROM TRADERS WHERE id <> '00000000-0000-0000-0000-000000000000'")
 traders_table = cursor_postgres.fetchall()
 
 # Pega valor final dos ativos

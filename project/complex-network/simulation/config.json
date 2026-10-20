@@ -1,7 +1,8 @@
 {
     "apiEndpoints":{
         "graph":"http://rsi-api:5002/graph",
-        "trend":"http://rsi-api:5002/trend"
+        "trend":"http://rsi-api:5002/trend",
+        "market":"http://rsi-api:5002"
     },
     "robots":[
         {

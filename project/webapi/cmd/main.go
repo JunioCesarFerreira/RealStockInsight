@@ -12,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 	"main.go/configs"
 	"main.go/pkg/graph"
+	"main.go/pkg/market"
 	"main.go/pkg/monitor"
 	"main.go/pkg/trend"
 )
@@ -47,10 +48,17 @@ func main() {
 			{Name: "kafka-ui", Addr: configs.KafkaUIAddr},
 		},
 	}
+	mkt := &market.Handler{DB: db}
 	http.HandleFunc("/graph", graphHandler)
 	http.HandleFunc("/trend", trendHandler)
-	http.HandleFunc("/stocks/sell", sellHandler)
-	http.HandleFunc("/stocks/buy", buyHandler)
+	// Mercado descentralizado: ordens, contas e ledger das negociações
+	http.HandleFunc("/stocks/buy", withCors(mkt.Buy))
+	http.HandleFunc("/stocks/sell", withCors(mkt.Sell))
+	http.HandleFunc("/market/accounts", withCors(mkt.Accounts))
+	http.HandleFunc("/market/accounts/", withCors(mkt.Account))
+	http.HandleFunc("/market/trades", withCors(mkt.Trades))
+	http.HandleFunc("/market/ledger", withCors(mkt.Ledger))
+	http.HandleFunc("/market/ledger/verify", withCors(mkt.VerifyLedger))
 	http.HandleFunc("/health", withCors(mon.Health))
 	http.HandleFunc("/monitor/heartbeat", withCors(mon.Heartbeat))
 	http.HandleFunc("/monitor/event", withCors(mon.Event))
@@ -154,12 +162,6 @@ func trendHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Success")
-}
-
-func sellHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-func buyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func errorLog(err error) {

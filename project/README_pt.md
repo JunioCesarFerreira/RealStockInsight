@@ -50,7 +50,7 @@ A página inicial mostra o estado de todo o sistema, atualizado a cada 5s:
 | Error | A última operação falhou (detalhes no log de eventos) |
 | Down | Sem heartbeat há algum tempo: o contêiner provavelmente parou ou está reiniciando |
 
-Outros endereços pelo mesmo proxy: visualização da rede em `/graph-view/#/network`, Kafka UI em `/kafka-ui/` e a API em `/api/`.
+Outros endereços pelo mesmo proxy: visualização da rede em `/#/network`, Kafka UI em `/kafka-ui/` e a API em `/api/`.
 
 Para diagnóstico pela linha de comando:
 
@@ -61,7 +61,29 @@ docker compose logs -f producer    # ou consumer-net, consumer-trend, investor-b
 
 **Como funciona:** cada serviço Python usa o módulo `monitor.py` para enviar heartbeats (a cada 10 a 15s) e eventos à WebAPI (`POST /monitor/heartbeat` e `POST /monitor/event`). A WebAPI grava esses dados no PostgreSQL (tabelas `SERVICE_STATUS` e `SERVICE_EVENTS`) e os expõe em `GET /monitor/status` e `GET /monitor/events`. O proxy reverso aceita apenas leitura nesses endpoints a partir de fora do Docker.
 
-**Duração da simulação:** os dados históricos do producer (`database.db`) rendem cerca de 6.700 mensagens, uma a cada 60s (aproximadamente 4,7 dias). Ao esgotá-los, o producer fica no estado `idle`. Para reiniciar a simulação: `docker compose up -d --force-recreate producer`.
+**Duração da simulação:** os dados históricos do producer (`database.db`) rendem cerca de 6.700 mensagens, uma a cada 60s (aproximadamente 4,7 dias). Ao esgotá-los, o producer fica no estado `idle`. Para reiniciar toda a simulação (preços, redes, contas e ledger): `docker compose down && docker compose up -d`.
+
+### Mercado descentralizado
+
+Como proposto no artigo *An automated decision-making system employing complex networks and blockchain for the decentralized stock market* (Garcia et al., Expert Systems with Applications, 2024), as decisões vêm da rede complexa (medidas de centralidade e tendência), enquanto a troca de ativos ocorre em um mercado descentralizado. Aqui o mercado é simulado pela WebAPI:
+
+- **Contas:** cada bot abre uma conta com sua dotação inicial (`initialMoney` em `config.json` e `initial_assets.json`). Caixa e carteira ficam no mercado, que é a fonte da verdade, e não no bot.
+- **Ordens:** ordens de compra e venda são validadas e liquidadas atomicamente ao preço de referência mais recente do ativo (último preço do feed). A contraparte é o pool de liquidez do mercado, como em exchanges descentralizadas com preço por oráculo. Ordens sem caixa ou posição suficiente são recusadas (HTTP 422).
+- **Ledger:** cada negociação é anexada a `STOCK_EXCHANGES` com o hash do registro anterior (cadeia SHA-256), de modo que alterar, remover ou reordenar qualquer negociação passada é detectado por `GET /market/ledger/verify`. Isso reproduz, em um único nó, o papel de transparência e imutabilidade da blockchain no artigo; não é uma blockchain distribuída.
+- **Estratégia:** inalterada. Uma decisão de compra compra 15% do caixa disponível no ativo e uma decisão de venda vende toda a posição, como nos bots originais. O log SQLite dos bots (`bot_log.db`) continua sendo gravado, então `complex-network/results-analysis/analysis.py` continua funcionando.
+- **Avaliação:** a aba **Market** mostra, para cada bot, caixa, valor em ações, patrimônio, resultado desde a abertura da conta e a comparação com buy & hold, além das negociações recentes e da verificação do ledger.
+
+| Endpoint | Descrição |
+|---|---|
+| `POST /market/accounts` | Abre uma conta `{trader_id, initial_cash, initial_holdings}` (idempotente) |
+| `GET /market/accounts` | Contas avaliadas aos preços mais recentes |
+| `GET /market/accounts/{trader_id}` | Uma conta, incluindo a carteira |
+| `POST /stocks/buy`, `POST /stocks/sell` | Ordens `{trader_id, ticker, amount}` |
+| `GET /market/trades` | Negociações mais recentes (`limit`, `trader_id`) |
+| `GET /market/ledger` | Resumo do ledger (registros, volume, hash do último registro) |
+| `GET /market/ledger/verify` | Recalcula toda a cadeia de hashes |
+
+Pelo proxy público só é permitida leitura em `/api/market/`; ordens e abertura de contas são aceitas apenas a partir da rede interna do Docker.
 
 ## Como executar o Projeto em Debug
 

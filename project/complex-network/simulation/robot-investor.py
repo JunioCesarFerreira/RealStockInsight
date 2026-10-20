@@ -7,21 +7,25 @@ import sqlite3
 import networkx as nx
 from queue import Queue
 from threading import Lock, Thread
+from market import MarketClient, MarketNotReady, OrderRejected
 from monitor import Monitor
 
 API_GRAPH_ENDPOINT = "http://localhost:5002/api/graph"
 API_TREND_ENDPOINT = "http://localhost:5002/api/trend"
+API_MARKET_URL = "http://localhost:5002"
 
 # Serializa as escritas no SQLite: todos os bots (threads) gravam no mesmo arquivo
 log_lock = Lock()
 
 # Classe Robô Investidor
 class Bot:
-    def __init__(self, id, name, initial_money, initial_assets={}):
+    """Investidor simulado. Saldo e carteira ficam na conta do mercado; o bot guarda apenas
+    a dotação inicial usada para abrir a conta."""
+    def __init__(self, id, name, initial_money, initial_assets):
         self.id = id
         self.name = name
-        self.money = initial_money
-        self.assets = initial_assets
+        self.initial_money = initial_money
+        self.initial_assets = initial_assets
 
 
 def create_table_repository():
@@ -116,19 +120,47 @@ def request_trend():
 
     return trends_dict
 
-def run_robot(bot, parameters, G, trends):
+def place_order(market, side, bot, ticker, amount, holdings, execution):
+    """Envia a ordem ao mercado e atualiza a carteira local com o resultado da liquidação.
+
+    Returns:
+        float: Caixa após a ordem, ou None se o mercado recusou a ordem.
+    """
+    try:
+        if side == "buy":
+            result = market.buy(bot.id, ticker, amount)
+        else:
+            result = market.sell(bot.id, ticker, amount)
+    except OrderRejected:
+        execution["rejected"] += 1
+        return None
+    holdings[ticker] = result["holding"]
+    execution[side] += 1
+    execution["volume"] += float(result["trade"]["total"])
+    return float(result["cash"])
+
+def run_robot(bot, parameters, G, trends, market):
     """Executa o robô para simular a tomada de decisão dos investidores.
 
     Args:
         bot (object): Atributos do robô.
         parameters (dict): Parâmetros para métricas específicas.
         G (networkx.Graph): Grafo representando a rede de co-movimentos.
+        trends (dict): Tendência e preço de referência de cada ativo.
+        market (MarketClient): Mercado onde as ordens são executadas.
 
     Returns:
-        dict: Quantidade de decisões de cada tipo (buy, sell, hold) e ativos sem tendência (skipped).
+        tuple: Decisões de cada tipo (buy, sell, hold) e ativos sem tendência (skipped);
+               ordens executadas (buy, sell), recusadas (rejected) e volume negociado (volume).
     """
     metrics = {}
     decisions = {"buy": 0, "sell": 0, "hold": 0, "skipped": 0}
+    execution = {"buy": 0, "sell": 0, "rejected": 0, "volume": 0.0}
+
+    # Posição atual da conta no mercado
+    account = market.account(bot.id)
+    cash = float(account["cash"])
+    holdings = dict(account.get("holdings", {}))
 
     # Calcula as métricas de acordo com os parâmetros fornecidos
     if parameters["degreeCentrality"]["enable"]:
@@ -170,27 +202,31 @@ def run_robot(bot, parameters, G, trends):
             action = investment_strategy(metric_value, threshold, trend=trend)
             decisions[action] += 1
 
+            new_cash = None
             if action == "buy":
-                if bot.money > price:
+                if cash > price:
                     # Compra porcentagem fixa! Pensar em estratégias mais dinâmicas!
-                    value = (bot.money / price) * 0.15
+                    value = (cash / price) * 0.15
                     amount = math.floor(value)
                     if amount==0:
                         amount = 1
-                    #bot.buy_active(ticker, amount, price)
+                    new_cash = place_order(market, "buy", bot, ticker, amount, holdings, execution)
 
             elif action == "sell":
                 # Vende tudo! Pensar em estratégias mais dinâmicas!
-                if ticker in bot.assets:
-                    amount = bot.assets[ticker]
-                    #bot.sell_active(ticker, amount, price)
+                amount = holdings.get(ticker, 0)
+                if amount > 0:
+                    new_cash = place_order(market, "sell", bot, ticker, amount, holdings, execution)
 
-            assets_txt = json.dumps(bot.assets)
-            insert_log_repository(bot.name, bot.id, ticker, metric_value, action, bot.money, assets_txt)
+            if new_cash is not None:
+                cash = new_cash
+
+            assets_txt = json.dumps(holdings)
+            insert_log_repository(bot.name, bot.id, ticker, metric_value, action, cash, assets_txt)
         else:
             raise ValueError(f"Nenhuma métrica foi selecionada para o bot {bot.name}")
 
-    return decisions
+    return decisions, execution
 
 
 def investment_strategy(p, t, trend=None):
@@ -225,7 +261,9 @@ def thread_run_robot(robot, queue, mon):
     with open('initial_assets.json', 'r') as file:
         initial_assets = json.load(file)
 
-    bot = Bot(robot["id"], robot["name"], robot["initialMoney"], initial_assets=initial_assets)
+    bot = Bot(robot["id"], robot["name"], robot["initialMoney"], initial_assets)
+    market = MarketClient(API_MARKET_URL)
+    account_opened = False
     totals = {"buy": 0, "sell": 0, "hold": 0}
     cycles = 0
 
@@ -243,17 +281,35 @@ def thread_run_robot(robot, queue, mon):
                 if not trends:
                     mon.state("waiting", "Aguardando tendências (consumer-trend)")
                 else:
-                    decisions = run_robot(bot, robot["parameters"][0], G, trends)
+                    if not account_opened:
+                        # Abre a conta (ou retoma a existente, após reinício do bot)
+                        account = market.open_account(bot.id, bot.initial_money, bot.initial_assets)
+                        account_opened = True
+                        mon.info(f"Conta no mercado: caixa US$ {float(account['cash']):,.2f}, "
+                                 f"patrimônio US$ {float(account['net_worth']):,.2f}")
+
+                    decisions, execution = run_robot(bot, robot["parameters"][0], G, trends, market)
+                    account = market.account(bot.id)
                     cycles += 1
                     for action in totals:
                         totals[action] += decisions[action]
-                    mon.set(cycles=cycles, last_cycle_at=time.time(), money=bot.money,
+                    mon.set(cycles=cycles, last_cycle_at=time.time(),
                             last_buy=decisions["buy"], last_sell=decisions["sell"], last_hold=decisions["hold"],
-                            total_buy=totals["buy"], total_sell=totals["sell"], total_hold=totals["hold"])
+                            total_buy=totals["buy"], total_sell=totals["sell"], total_hold=totals["hold"],
+                            last_trades_buy=execution["buy"], last_trades_sell=execution["sell"],
+                            last_rejected=execution["rejected"],
+                            cash=float(account["cash"]), net_worth=float(account["net_worth"]),
+                            result_pct=account["result_pct"])
                     mon.state("running", f"Avaliando {G.number_of_nodes()} ativos a cada {robot['interval']}s")
-                    mon.info(f"Ciclo {cycles}: {decisions['buy']} compra, {decisions['sell']} venda, "
+                    mon.info(f"Ciclo {cycles}: decisões {decisions['buy']} compra, {decisions['sell']} venda, "
                              f"{decisions['hold']} manter" +
-                             (f", {decisions['skipped']} sem tendência" if decisions["skipped"] else ""))
+                             (f", {decisions['skipped']} sem tendência" if decisions["skipped"] else "") +
+                             f"; executadas {execution['buy']} compras e {execution['sell']} vendas "
+                             f"(US$ {execution['volume']:,.2f})" +
+                             (f", {execution['rejected']} recusadas" if execution["rejected"] else "") +
+                             f"; patrimônio US$ {float(account['net_worth']):,.2f} ({account['result_pct']:+.2f}%)")
+        except MarketNotReady as e:
+            mon.state("waiting", f"Mercado ainda sem preços: {e}")
         except Exception as e:
             mon.incr("errors")
             mon.state("error", str(e))
@@ -283,6 +339,7 @@ if __name__=="__main__":
                 apiEndpoints = config["apiEndpoints"]
                 API_GRAPH_ENDPOINT = apiEndpoints["graph"]
                 API_TREND_ENDPOINT = apiEndpoints["trend"]
+                API_MARKET_URL = apiEndpoints["market"]
     except Exception as e:
         print(f"Falha ao ler configurações: {e}")
         exit(1)
@@ -291,8 +348,8 @@ if __name__=="__main__":
     monitors = {}
     for robot in config["robots"]:
         mon = Monitor("investor-bot", instance=robot["name"], interval=15)
-        mon.set(strategy=describe_strategy(robot["parameters"][0]), interval_s=robot["interval"],
-                initial_money=robot["initialMoney"])
+        mon.set(trader_id=robot["id"], strategy=describe_strategy(robot["parameters"][0]),
+                interval_s=robot["interval"], initial_money=robot["initialMoney"])
         monitors[robot["name"]] = mon
 
     # Atraso na inicialização

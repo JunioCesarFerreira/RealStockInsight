@@ -50,7 +50,7 @@ The home page shows the state of the whole system, refreshed every 5s:
 | Error | The last operation failed (details in the event log) |
 | Down | No heartbeat for a while: the container is probably stopped or restarting |
 
-Other addresses behind the same proxy: the network view at `/graph-view/#/network`, Kafka UI at `/kafka-ui/` and the API at `/api/`.
+Other addresses behind the same proxy: the network view at `/#/network`, Kafka UI at `/kafka-ui/` and the API at `/api/`.
 
 For command-line diagnostics:
 
@@ -61,7 +61,29 @@ docker compose logs -f producer    # or consumer-net, consumer-trend, investor-b
 
 **How it works:** each Python service uses the `monitor.py` module to send heartbeats (every 10 to 15s) and events to the WebAPI (`POST /monitor/heartbeat` and `POST /monitor/event`). The WebAPI stores them in PostgreSQL (tables `SERVICE_STATUS` and `SERVICE_EVENTS`) and serves them at `GET /monitor/status` and `GET /monitor/events`. The reverse proxy only allows reads on these endpoints from outside Docker.
 
-**Simulation length:** the producer's historical data (`database.db`) yields about 6,700 messages, one every 60s (roughly 4.7 days). Once exhausted, the producer stays in the `idle` state. To restart the simulation: `docker compose up -d --force-recreate producer`.
+**Simulation length:** the producer's historical data (`database.db`) yields about 6,700 messages, one every 60s (roughly 4.7 days). Once exhausted, the producer stays in the `idle` state. To restart the whole simulation (prices, networks, accounts and ledger): `docker compose down && docker compose up -d`.
+
+### Decentralized Market
+
+As proposed in the paper *An automated decision-making system employing complex networks and blockchain for the decentralized stock market* (Garcia et al., Expert Systems with Applications, 2024), decisions come from the complex network (centrality measures and trend), while assets are exchanged on a decentralized market. Here the market is simulated by the WebAPI:
+
+- **Accounts:** each bot opens an account with its initial endowment (`initialMoney` in `config.json` and `initial_assets.json`). Cash and holdings are kept by the market, which is the source of truth, not by the bot.
+- **Orders:** buy and sell orders are validated and settled atomically at the latest reference price of the ticker (the last price of the feed). The counterparty is the market liquidity pool, as in oracle-priced decentralized exchanges. Orders without enough cash or holdings are rejected (HTTP 422).
+- **Ledger:** every trade is appended to `STOCK_EXCHANGES` with the hash of the previous record (SHA-256 chain), so changing, removing or reordering any past trade is detected by `GET /market/ledger/verify`. This reproduces, on a single node, the transparency and immutability role of the blockchain in the paper; it is not a distributed blockchain.
+- **Strategy:** unchanged. A buy decision buys 15% of the available cash in the ticker and a sell decision sells the whole position, as in the original bots. The bots' SQLite log (`bot_log.db`) is still written, so `complex-network/results-analysis/analysis.py` keeps working.
+- **Evaluation:** the **Market** tab shows, for each bot, cash, stocks value, net worth, the result since the account was opened and the comparison with buy & hold, plus the recent trades and the ledger verification.
+
+| Endpoint | Description |
+|---|---|
+| `POST /market/accounts` | Opens an account `{trader_id, initial_cash, initial_holdings}` (idempotent) |
+| `GET /market/accounts` | Accounts valued at the latest prices |
+| `GET /market/accounts/{trader_id}` | One account, including its holdings |
+| `POST /stocks/buy`, `POST /stocks/sell` | Orders `{trader_id, ticker, amount}` |
+| `GET /market/trades` | Latest trades (`limit`, `trader_id`) |
+| `GET /market/ledger` | Ledger summary (records, volume, head hash) |
+| `GET /market/ledger/verify` | Recomputes the whole hash chain |
+
+Through the public proxy only reads are allowed on `/api/market/`; orders and account opening are accepted only from the Docker internal network.
 
 ## How to Run the Project in Debug Mode
 
